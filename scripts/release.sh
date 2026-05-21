@@ -72,6 +72,11 @@ cp Sources/ClaudeBar/Info.plist "$BUNDLE_DIR/Contents/"
 cp Sources/Resources/AppIcon.icns "$BUNDLE_DIR/Contents/Resources/"
 ditto "$BUILD_DIR/Sparkle.framework" "$BUNDLE_DIR/Contents/Frameworks/Sparkle.framework"
 
+# SwiftPM-built binaries don't include @executable_path/../Frameworks in their
+# rpath, so dyld can't find Sparkle.framework when bundled. Add it before
+# signing (install_name_tool invalidates signatures).
+install_name_tool -add_rpath "@executable_path/../Frameworks" "$BUNDLE_DIR/Contents/MacOS/$APP_NAME"
+
 echo "==> Signing Sparkle.framework internals + app"
 SPARKLE_FW="$BUNDLE_DIR/Contents/Frameworks/Sparkle.framework"
 codesign --force --sign "$SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/XPCServices/Downloader.xpc"
