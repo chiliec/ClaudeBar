@@ -51,8 +51,6 @@
 "time.hoursMinutes %lld %lld" = "%1$lldh %2$lldm";
 "time.lessThanMinute" = "less than a minute";
 "update.badKey" = "Invalid session key";
-"update.download" = "Download";
-"update.versionAvailable %@" = "v%@ available";
 "update.wrongAccount" = "This key belongs to a different account. Pick org:";
 "usage.creditsUsed %@ %@" = "%1$@ / %2$@";
 "usage.design" = "Design";

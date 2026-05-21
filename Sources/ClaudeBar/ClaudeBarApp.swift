@@ -4,6 +4,7 @@ import ClaudeBarUI
 @main
 struct ClaudeBarApp: App {
     @State private var appState = AppState()
+    @State private var updater = SparkleUpdater()
 
     var body: some Scene {
         MenuBarExtra {

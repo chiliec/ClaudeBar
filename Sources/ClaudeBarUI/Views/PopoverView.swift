@@ -25,9 +25,6 @@ public struct PopoverView: View {
             }
         }
         .frame(width: 320)
-        .task {
-            await state.checkForUpdate()
-        }
         .onDisappear {
             state.showingSettings = false
         }

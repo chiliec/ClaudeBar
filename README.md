@@ -21,14 +21,13 @@ A native macOS menu bar app that shows your Claude.ai usage at a glance.
 
 ## Install
 
-Download the latest `.zip` from [Releases](https://github.com/chiliec/ClaudeBar/releases), unzip, then:
+    brew install --cask chiliec/tap/claudebar
 
-```bash
-xattr -d com.apple.quarantine ClaudeBar.app
-rm -rf /Applications/ClaudeBar.app && mv ClaudeBar.app /Applications/
-```
+That's it. The first launch shows the standard macOS "downloaded from the internet" prompt — click **Open**. After that, the app updates itself inside the app: Sparkle checks daily, and you'll see an "Update available" dialog whenever there's a new version.
 
-The `xattr` command removes the macOS quarantine flag — required for apps distributed outside the App Store.
+### Manual install (without Homebrew)
+
+Download the latest `.zip` from [Releases](https://github.com/chiliec/ClaudeBar/releases), unzip, drag `ClaudeBar.app` to `/Applications`, then double-click. The first launch shows the same Gatekeeper prompt as above.
 
 ### Build from source
 

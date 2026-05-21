@@ -51,8 +51,6 @@
 "time.hoursMinutes %lld %lld" = "%1$lldч %2$lldм";
 "time.lessThanMinute" = "меньше минуты";
 "update.badKey" = "Неверный ключ сессии";
-"update.download" = "Скачать";
-"update.versionAvailable %@" = "v%@ доступна";
 "update.wrongAccount" = "Этот ключ принадлежит другому аккаунту. Выберите организацию:";
 "usage.creditsUsed %@ %@" = "%1$@ / %2$@";
 "usage.design" = "Design";
