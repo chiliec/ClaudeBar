@@ -51,13 +51,21 @@ if [ ! -f "$CASK_FILE" ]; then
     exit 1
 fi
 
+# ---- Run tests against current state ---------------------------------------
+# Tests validate that the previously-committed Info.plist + appcast are
+# consistent, so we run them BEFORE bumping the version (which would break
+# AppcastTests.topmostItemMatchesInfoPlistVersion until we insert the new item).
+
+echo "==> Running tests"
+swift test 2>&1 | tail -3
+
 # ---- Bump version in Info.plist --------------------------------------------
 
 echo "==> Updating Info.plist to $VERSION"
 sed -i '' "s/<string>[0-9]*\.[0-9]*\.[0-9]*<\/string>/<string>$VERSION<\/string>/g" \
     Sources/ClaudeBar/Info.plist
 
-# ---- Build, sign, bundle, test ---------------------------------------------
+# ---- Build, sign, bundle ---------------------------------------------------
 
 echo "==> Building release"
 swift build -c release
@@ -89,9 +97,6 @@ codesign --force --sign "$SIGN_IDENTITY" --entitlements Sources/ClaudeBar/Claude
 echo "==> Zipping"
 rm -f "$ZIP_FILE"
 (cd "$BUILD_DIR" && zip -r -q "$APP_NAME.zip" "$APP_NAME.app")
-
-echo "==> Running tests"
-swift test 2>&1 | tail -3
 
 # ---- Sparkle signature + appcast entry -------------------------------------
 
