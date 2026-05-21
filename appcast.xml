@@ -5,5 +5,27 @@
     <link>https://raw.githubusercontent.com/chiliec/ClaudeBar/main/appcast.xml</link>
     <description>Updates for ClaudeBar</description>
     <language>en</language>
+    <item>
+      <title>Version 0.0.16</title>
+      <pubDate>Thu, 21 May 2026 14:45:30 +0000</pubDate>
+      <sparkle:version>0.0.16</sparkle:version>
+      <sparkle:shortVersionString>0.0.16</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## What's new in v0.0.16
+
+**Homebrew Cask install + in-app Sparkle 2 updates**
+
+    brew install --cask chiliec/tap/claudebar
+
+First launch needs no manual `xattr` or right-click bypass — the cask strips quarantine on install, and updates ship via Sparkle inside the app.
+
+**Fixes since v0.0.15 (retracted: dyld couldn't find bundled Sparkle.framework)**
+- Inject `@executable_path/../Frameworks` rpath so the binary finds bundled Sparkle.framework at runtime
+
+**Manual install (no Homebrew)**
+
+Download the `.zip` below, unzip, drag `ClaudeBar.app` to `/Applications`. You'll see a one-time Gatekeeper prompt — right-click → Open to bypass it.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.16/ClaudeBar.zip" sparkle:edSignature="IN6E+BRL+YB/Nh+Z5GIsBJh2UJimrjwWsUHjhompgiiKm+YXKm7BvmgHGCvz/YNUv787j1je1puTg7GlQul2Aw==" length="5114350" type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
