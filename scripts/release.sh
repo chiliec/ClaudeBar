@@ -35,7 +35,7 @@ if [ ! -x "$SIGN_UPDATE" ]; then
     exit 1
 fi
 
-if ! "$SIGN_UPDATE" --help 2>&1 | grep -q "Usage"; then
+if ! "$SIGN_UPDATE" --help 2>&1 | grep -qi "usage"; then
     echo "ERROR: $SIGN_UPDATE is not runnable. Try 'xattr -d com.apple.quarantine $SIGN_UPDATE'."
     exit 1
 fi
