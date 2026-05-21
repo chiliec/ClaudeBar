@@ -7,3 +7,6 @@ xcuserdata/
 settings.local.json
 .vscode/*
 memory/
+
+# Sparkle CLI tools (downloaded per maintainer, not committed)
+scripts/sparkle-bin/
