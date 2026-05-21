@@ -6,6 +6,26 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.17</title>
+      <pubDate>Thu, 21 May 2026 14:58:13 +0000</pubDate>
+      <sparkle:version>0.0.17</sparkle:version>
+      <sparkle:shortVersionString>0.0.17</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## What's new in v0.0.17
+
+**Cask renamed: `claudebar-menubar`**
+
+    brew install --cask chiliec/tap/claudebar-menubar
+
+The short name `claudebar` in the central Homebrew tap belongs to an unrelated project. Using a unique short name avoids `brew upgrade` silently replacing your install with the wrong app.
+
+If you installed an earlier `chiliec/tap/claudebar`, uninstall it first:
+
+    brew uninstall --cask claudebar --force
+    brew install --cask chiliec/tap/claudebar-menubar]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.17/ClaudeBar.zip" sparkle:edSignature="tXcsScTAt6ftVmopTOa/4xu8lhULDOT4N/7MXVYoKFeYCflAFxaYrQ543l0fKHa3D5E5UdL7UXCmU1yYUjTEBw==" length="5114324" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.16</title>
       <pubDate>Thu, 21 May 2026 14:45:30 +0000</pubDate>
       <sparkle:version>0.0.16</sparkle:version>
