@@ -21,9 +21,11 @@ A native macOS menu bar app that shows your Claude.ai usage at a glance.
 
 ## Install
 
-    brew install --cask chiliec/tap/claudebar
+    brew install --cask chiliec/tap/claudebar-menubar
 
-That's it. The first launch shows the standard macOS "downloaded from the internet" prompt — click **Open**. After that, the app updates itself inside the app: Sparkle checks daily, and you'll see an "Update available" dialog whenever there's a new version.
+That's it. After install, the app updates itself: Sparkle checks daily and shows an "Update available" dialog whenever there's a new version.
+
+> The cask is named `claudebar-menubar` because the short name `claudebar` is taken by an unrelated project in the central Homebrew tap. Always use the fully-qualified `chiliec/tap/claudebar-menubar`.
 
 ### Manual install (without Homebrew)
 

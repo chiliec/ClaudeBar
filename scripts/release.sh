@@ -19,7 +19,7 @@ SIGN_IDENTITY="Apple Development: Vladimir Babin (8FNR8DGE9N)"
 SPARKLE_BIN_DIR="${SPARKLE_BIN_DIR:-./scripts/sparkle-bin}"
 SIGN_UPDATE="$SPARKLE_BIN_DIR/sign_update"
 TAP_PATH="${HOMEBREW_TAP_PATH:-../homebrew-tap}"
-CASK_FILE="$TAP_PATH/Casks/claudebar.rb"
+CASK_FILE="$TAP_PATH/Casks/claudebar-menubar.rb"
 APPCAST_FILE="./appcast.xml"
 
 # ---- Prerequisite checks ----------------------------------------------------
@@ -172,8 +172,8 @@ sed -i '' "s/version \"[0-9]*\.[0-9]*\.[0-9]*\"/version \"$VERSION\"/" "$CASK_FI
 sed -i '' "s/sha256 .*/sha256 \"$SHA256\"/" "$CASK_FILE"
 (
     cd "$TAP_PATH"
-    git add Casks/claudebar.rb
-    git diff --cached --quiet || git commit -m "claudebar: $VERSION"
+    git add Casks/claudebar-menubar.rb
+    git diff --cached --quiet || git commit -m "claudebar-menubar: $VERSION"
     git push origin master
 )
 
@@ -183,6 +183,6 @@ echo
 echo "==> Done."
 echo "    Release:  https://github.com/chiliec/ClaudeBar/releases/tag/v$VERSION"
 echo "    Appcast:  https://raw.githubusercontent.com/chiliec/ClaudeBar/main/appcast.xml"
-echo "    Cask:     https://github.com/chiliec/homebrew-tap/blob/master/Casks/claudebar.rb"
+echo "    Cask:     https://github.com/chiliec/homebrew-tap/blob/master/Casks/claudebar-menubar.rb"
 echo
-echo "Install: brew install --cask chiliec/tap/claudebar"
+echo "Install: brew install --cask chiliec/tap/claudebar-menubar"
