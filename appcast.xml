@@ -5,29 +5,5 @@
     <link>https://raw.githubusercontent.com/chiliec/ClaudeBar/main/appcast.xml</link>
     <description>Updates for ClaudeBar</description>
     <language>en</language>
-    <item>
-      <title>Version 0.0.15</title>
-      <pubDate>Thu, 21 May 2026 14:35:21 +0000</pubDate>
-      <sparkle:version>0.0.15</sparkle:version>
-      <sparkle:shortVersionString>0.0.15</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[## What's new in v0.0.15
-
-**Homebrew Cask install + Sparkle 2 auto-updates**
-
-    brew install --cask chiliec/tap/claudebar
-
-No more `curl | xattr` ritual. The cask strips the Gatekeeper quarantine flag automatically on install, and Sparkle handles update prompts inside the app.
-
-**Fixes since v0.0.14 (which was unlaunchable, now retracted)**
-- Bundle `Sparkle.framework` inside the .app and sign its internal XPC services + Updater.app
-- Apply entitlements during signing
-- Cask `postflight` block strips quarantine so first launch works without the Gatekeeper popup
-
-**Manual install (no Homebrew)**
-
-Download the `.zip` below, unzip, drag `ClaudeBar.app` to `/Applications`. You'll see a one-time Gatekeeper prompt — right-click → Open to bypass it.]]></description>
-      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.15/ClaudeBar.zip" sparkle:edSignature="C//FH1P6F/kRLC1Gac9468NJK+qt9uGegH5/p2k19V4QEcxgkHeXTtjGEeH1CyjnlBlhidK6fiAlGuL4AilvBg==" length="5114277" type="application/octet-stream"/>
-    </item>
   </channel>
 </rss>
