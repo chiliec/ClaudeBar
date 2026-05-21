@@ -39,9 +39,6 @@ struct UsageDetailView: View {
                     .foregroundStyle(.tertiary)
                     .padding(40)
             }
-            if let update = state.availableUpdate {
-                updateBanner(version: update.version, url: update.url)
-            }
             footer
         }
     }
@@ -212,28 +209,6 @@ struct UsageDetailView: View {
         }
     }
 
-    @ViewBuilder
-    private func updateBanner(version: String, url: String) -> some View {
-        if let destination = URL(string: url) {
-            HStack(spacing: 6) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .foregroundStyle(.blue)
-                    .font(.subheadline)
-                Text("update.versionAvailable \(version)", bundle: .module)
-                    .font(.subheadline)
-                Spacer()
-                Link(destination: destination) {
-                    Text("update.download", bundle: .module)
-                        .font(.subheadline)
-                        .foregroundStyle(.blue)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .modifier(GlassBannerModifier())
-        }
-    }
-
     private func extraUsageSection(used: Double, limit: Double, currency: String?, overage: Double?, overageCurrency: String?) -> some View {
         let currencySymbol = Self.currencySymbol(for: currency)
         let usedDisplay = "\(currencySymbol)\(String(format: "%.2f", used / 100))"
@@ -342,18 +317,6 @@ private struct FooterButtonModifier: ViewModifier {
             content
                 .foregroundStyle(.blue)
                 .buttonStyle(.plain)
-        }
-    }
-}
-
-private struct GlassBannerModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            content
-                .glassEffect(.regular.tint(.blue), in: .rect(cornerRadius: 8))
-        } else {
-            content
-                .background(.blue.opacity(0.08))
         }
     }
 }

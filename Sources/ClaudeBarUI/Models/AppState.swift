@@ -52,9 +52,6 @@ public final class AppState {
     // MARK: - UI State
     public var showingSettings = false
 
-    // MARK: - Update State
-    public var availableUpdate: (version: String, url: String)?
-
     // MARK: - Services
     private let keychain: KeychainService
     private let orgListStore: OrgListStore
@@ -411,11 +408,6 @@ public final class AppState {
         pollTimer = nil
     }
 
-    // MARK: - Update Check
-
-    public func checkForUpdate() async {
-        availableUpdate = await UpdateChecker.checkForUpdate()
-    }
 }
 
 public enum AppError: Equatable {
