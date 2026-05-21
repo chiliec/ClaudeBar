@@ -101,7 +101,9 @@ if [ -n "$CHANGES_FILE" ]; then
 fi
 
 echo "==> Inserting <item> into $APPCAST_FILE"
-NEW_ITEM=$(cat <<ITEM
+# Write the new <item> to a temp file because BSD awk can't take multi-line -v values.
+NEW_ITEM_FILE=$(mktemp)
+cat > "$NEW_ITEM_FILE" <<ITEM
     <item>
       <title>Version $VERSION</title>
       <pubDate>$PUBDATE</pubDate>
@@ -112,15 +114,19 @@ NEW_ITEM=$(cat <<ITEM
       <enclosure url="$ENCLOSURE_URL" sparkle:edSignature="$ED_SIGNATURE" length="$LENGTH" type="application/octet-stream"/>
     </item>
 ITEM
-)
 # Insert the new item as the first child of <channel>, after the <language> line.
-# Using a temp file because GNU sed's `r` is awkward on macOS BSD sed.
 TMP_APPCAST=$(mktemp)
-awk -v new_item="$NEW_ITEM" '
-    /<\/language>/ { print; print new_item; next }
+awk -v itemfile="$NEW_ITEM_FILE" '
+    /<\/language>/ {
+        print
+        while ((getline line < itemfile) > 0) print line
+        close(itemfile)
+        next
+    }
     { print }
 ' "$APPCAST_FILE" > "$TMP_APPCAST"
 mv "$TMP_APPCAST" "$APPCAST_FILE"
+rm -f "$NEW_ITEM_FILE"
 
 # ---- Commit + tag + push the ClaudeBar repo --------------------------------
 
