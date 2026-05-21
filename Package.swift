@@ -10,10 +10,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/nalexn/ViewInspector", from: "0.10.0"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0"),
     ],
     targets: [
         .target(
             name: "ClaudeBarUI",
+            dependencies: [
+                .product(name: "Sparkle", package: "Sparkle"),
+            ],
             resources: [.process("Resources")]
         ),
         .executableTarget(
