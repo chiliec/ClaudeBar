@@ -1,0 +1,9 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+  <channel>
+    <title>ClaudeBar</title>
+    <link>https://raw.githubusercontent.com/chiliec/ClaudeBar/main/appcast.xml</link>
+    <description>Updates for ClaudeBar</description>
+    <language>en</language>
+  </channel>
+</rss>
