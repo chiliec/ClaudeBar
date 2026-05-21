@@ -170,6 +170,6 @@ echo
 echo "==> Done."
 echo "    Release:  https://github.com/chiliec/ClaudeBar/releases/tag/v$VERSION"
 echo "    Appcast:  https://raw.githubusercontent.com/chiliec/ClaudeBar/main/appcast.xml"
-echo "    Cask:     https://github.com/chiliec/homebrew-tap/blob/main/Casks/claudebar.rb"
+echo "    Cask:     https://github.com/chiliec/homebrew-tap/blob/master/Casks/claudebar.rb"
 echo
 echo "Install: brew install --cask chiliec/tap/claudebar"
