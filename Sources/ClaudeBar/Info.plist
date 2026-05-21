@@ -18,5 +18,13 @@
     <true/>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
+    <key>SUFeedURL</key>
+    <string>https://raw.githubusercontent.com/chiliec/ClaudeBar/main/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>vW+hX4dN3wIN/76bu4/m3PbhakqCL1xK1niZ47jHHqc=</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <key>SUScheduledCheckInterval</key>
+    <integer>86400</integer>
 </dict>
 </plist>
