@@ -155,7 +155,7 @@ sed -i '' "s/sha256 .*/sha256 \"$SHA256\"/" "$CASK_FILE"
     cd "$TAP_PATH"
     git add Casks/claudebar.rb
     git diff --cached --quiet || git commit -m "claudebar: $VERSION"
-    git push origin main
+    git push origin master
 )
 
 # ---- Summary ---------------------------------------------------------------
