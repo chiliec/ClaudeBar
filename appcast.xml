@@ -6,6 +6,23 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.18</title>
+      <pubDate>Thu, 25 Jun 2026 14:44:58 +0000</pubDate>
+      <sparkle:version>0.0.18</sparkle:version>
+      <sparkle:shortVersionString>0.0.18</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## What's new in v0.0.18
+
+**7-Day windows now track the live API**
+
+The popover's 7-Day section used to hard-code Sonnet/Opus/Design rows. When Claude.ai stopped reporting those windows, they showed a misleading **0%** instead of disappearing.
+
+- Per-model windows now render **only when the API actually reports them** — a missing window means "not provisioned", so the row is hidden rather than shown as empty.
+- Any new window Claude.ai returns is surfaced automatically (no app update needed), including codenamed credit pools like `amber_ladder`, shown with their dollar balance (e.g. **$0 / $2,500**).
+- Known windows keep friendly names (Sonnet, Opus, Design); unrecognized codenames are humanized (`amber_ladder` → "Amber Ladder").]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.18/ClaudeBar.zip" sparkle:edSignature="4G5XMacmO7UeO7ehRl5Lajo+qwy0BH2rj7F/PiwWZ8ywPo2nj5s/dQZzXC0V8jm8KIcgQtHK8gf72kXBql7sAQ==" length="5138599" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.17</title>
       <pubDate>Thu, 21 May 2026 14:58:13 +0000</pubDate>
       <sparkle:version>0.0.17</sparkle:version>

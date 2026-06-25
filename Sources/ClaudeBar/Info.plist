@@ -9,9 +9,9 @@
     <key>CFBundleName</key>
     <string>ClaudeBar</string>
     <key>CFBundleVersion</key>
-    <string>0.0.17</string>
+    <string>0.0.18</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.0.17</string>
+    <string>0.0.18</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>LSUIElement</key>
