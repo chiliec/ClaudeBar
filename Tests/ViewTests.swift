@@ -256,6 +256,59 @@ struct UsageDetailViewHeaderTests {
         let inspected = try view.inspect()
         _ = try inspected.find(text: "Claude Usage")
     }
+
+    // MARK: - Per-model 7-day window rows
+
+    @Test func showsSonnetAndDesignRowsWhenReported() throws {
+        let state = makeAuthedState(orgs: [
+            Organization(uuid: "org-1", name: "Acme", capabilities: nil),
+        ])
+        state.usage = UsageResponse(
+            fiveHour: WindowUsage(utilization: 0.5, resetsAt: nil),
+            sevenDay: WindowUsage(utilization: 0.12, resetsAt: nil),
+            sevenDaySonnet: WindowUsage(utilization: 0.3, resetsAt: nil),
+            sevenDayOmelette: WindowUsage(utilization: 0.4, resetsAt: nil)
+        )
+        let inspected = try UsageDetailView(state: state).inspect()
+        _ = try inspected.find(text: "Sonnet")
+        _ = try inspected.find(text: "Design")
+    }
+
+    @Test func hidesSonnetAndDesignRowsWhenNull() throws {
+        // API returns `null` for these windows when the plan no longer
+        // provisions them — the rows must disappear, not render as 0%.
+        let state = makeAuthedState(orgs: [
+            Organization(uuid: "org-1", name: "Acme", capabilities: nil),
+        ])
+        state.usage = UsageResponse(
+            fiveHour: WindowUsage(utilization: 0.5, resetsAt: nil),
+            sevenDay: WindowUsage(utilization: 0.12, resetsAt: nil),
+            sevenDaySonnet: nil,
+            sevenDayOmelette: nil
+        )
+        let inspected = try UsageDetailView(state: state).inspect()
+        // Total row still renders; per-model rows are gone.
+        _ = try inspected.find(text: "Total")
+        #expect(throws: (any Error).self) { try inspected.find(text: "Sonnet") }
+        #expect(throws: (any Error).self) { try inspected.find(text: "Design") }
+    }
+
+    @Test func surfacesCodenamedDollarPoolRow() throws {
+        let state = makeAuthedState(orgs: [
+            Organization(uuid: "org-1", name: "Acme", capabilities: nil),
+        ])
+        state.usage = UsageResponse(
+            fiveHour: WindowUsage(utilization: 0.5, resetsAt: nil),
+            sevenDay: WindowUsage(utilization: 0.12, resetsAt: nil),
+            additionalWindows: [
+                AdditionalWindow(key: "amberLadder", utilization: 0, resetsAt: nil,
+                                 limitDollars: 2500, usedDollars: 0, remainingDollars: 2500),
+            ]
+        )
+        let inspected = try UsageDetailView(state: state).inspect()
+        _ = try inspected.find(text: "Amber Ladder")
+        _ = try inspected.find(text: "$0 / $2,500 ·")
+    }
 }
 
 // MARK: - RingProgressView Tests

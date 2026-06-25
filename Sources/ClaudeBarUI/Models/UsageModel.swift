@@ -5,18 +5,71 @@ import SwiftUI
 public struct UsageResponse: Codable {
     public let fiveHour: WindowUsage?
     public let sevenDay: WindowUsage
-    public let sevenDaySonnet: WindowUsage?
-    public let sevenDayOpus: WindowUsage?
-    public let sevenDayOmelette: WindowUsage?
     public let extraUsage: ExtraUsage?
+    /// Every other window-shaped field the API returns (per-model windows and
+    /// codenamed credit pools), excluding the structured fields above. Decoded
+    /// generically so Anthropic's frequent reshuffles surface automatically
+    /// instead of silently disappearing. Only non-null windows are kept.
+    public let additionalWindows: [AdditionalWindow]
 
-    public init(fiveHour: WindowUsage?, sevenDay: WindowUsage, sevenDaySonnet: WindowUsage? = nil, sevenDayOpus: WindowUsage? = nil, sevenDayOmelette: WindowUsage? = nil, extraUsage: ExtraUsage? = nil) {
+    /// Backward-compatible typed accessors. The per-model windows now live in
+    /// `additionalWindows`; these look them up by their (camelCased) API key.
+    public var sevenDaySonnet: WindowUsage? { typedWindow("sevenDaySonnet") }
+    public var sevenDayOpus: WindowUsage? { typedWindow("sevenDayOpus") }
+    public var sevenDayOmelette: WindowUsage? { typedWindow("sevenDayOmelette") }
+
+    private func typedWindow(_ key: String) -> WindowUsage? {
+        additionalWindows.first { $0.key == key }
+            .map { WindowUsage(utilization: $0.utilization, resetsAt: $0.resetsAt) }
+    }
+
+    public init(
+        fiveHour: WindowUsage?,
+        sevenDay: WindowUsage,
+        sevenDaySonnet: WindowUsage? = nil,
+        sevenDayOpus: WindowUsage? = nil,
+        sevenDayOmelette: WindowUsage? = nil,
+        additionalWindows: [AdditionalWindow] = [],
+        extraUsage: ExtraUsage? = nil
+    ) {
         self.fiveHour = fiveHour
         self.sevenDay = sevenDay
-        self.sevenDaySonnet = sevenDaySonnet
-        self.sevenDayOpus = sevenDayOpus
-        self.sevenDayOmelette = sevenDayOmelette
         self.extraUsage = extraUsage
+        var windows = additionalWindows
+        // Fold the legacy convenience params into the generic collection so
+        // existing call sites (tests, #Preview) keep working unchanged.
+        if let s = sevenDaySonnet { windows.append(AdditionalWindow(key: "sevenDaySonnet", utilization: s.utilization, resetsAt: s.resetsAt)) }
+        if let o = sevenDayOpus { windows.append(AdditionalWindow(key: "sevenDayOpus", utilization: o.utilization, resetsAt: o.resetsAt)) }
+        if let d = sevenDayOmelette { windows.append(AdditionalWindow(key: "sevenDayOmelette", utilization: d.utilization, resetsAt: d.resetsAt)) }
+        self.additionalWindows = AdditionalWindow.sorted(windows)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: DynamicCodingKey.self)
+        self.fiveHour = try container.decodeIfPresent(WindowUsage.self, forKey: DynamicCodingKey("fiveHour"))
+        self.sevenDay = try container.decode(WindowUsage.self, forKey: DynamicCodingKey("sevenDay"))
+        self.extraUsage = try container.decodeIfPresent(ExtraUsage.self, forKey: DynamicCodingKey("extraUsage"))
+
+        // Keys arrive camelCased (decoder uses `.convertFromSnakeCase`).
+        let structured: Set<String> = ["fiveHour", "sevenDay", "extraUsage", "limits", "spend"]
+        var windows: [AdditionalWindow] = []
+        for key in container.allKeys where !structured.contains(key.stringValue) {
+            if (try? container.decodeNil(forKey: key)) == true { continue }
+            guard let raw = try? container.decode(AdditionalWindow.RawWindow.self, forKey: key) else { continue }
+            windows.append(AdditionalWindow(
+                key: key.stringValue,
+                utilization: raw.utilization,
+                resetsAt: raw.resetsAt,
+                limitDollars: raw.limitDollars,
+                usedDollars: raw.usedDollars,
+                remainingDollars: raw.remainingDollars
+            ))
+        }
+        self.additionalWindows = AdditionalWindow.sorted(windows)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case fiveHour, sevenDay, extraUsage, additionalWindows
     }
 
     /// Max plans get an `extra_usage` credit pool; Pro plans don't. Cleanest
@@ -25,6 +78,124 @@ public struct UsageResponse: Codable {
         guard let extra = extraUsage, extra.isEnabled else { return false }
         return (extra.monthlyLimit ?? 0) > 0
     }
+}
+
+/// A `/usage` window the app doesn't model statically — a per-model rolling
+/// window (Sonnet/Opus/Design) or a codenamed credit pool (e.g. `amber_ladder`).
+/// Anthropic adds and retires these often, so we decode whatever is present and
+/// resolve a display label rather than hardcoding each one.
+public struct AdditionalWindow: Codable, Equatable, Identifiable {
+    /// The camelCased API key, e.g. `sevenDaySonnet` or `amberLadder`.
+    public let key: String
+    /// Utilization as a fraction (0.0–1.0).
+    public let utilization: Double
+    public let resetsAt: Date?
+    /// Dollar-denominated pools (credit grants) carry these; per-model windows don't.
+    public let limitDollars: Double?
+    public let usedDollars: Double?
+    public let remainingDollars: Double?
+
+    public var id: String { key }
+    public var isDollarPool: Bool { limitDollars != nil }
+
+    public init(
+        key: String,
+        utilization: Double,
+        resetsAt: Date?,
+        limitDollars: Double? = nil,
+        usedDollars: Double? = nil,
+        remainingDollars: Double? = nil
+    ) {
+        self.key = key
+        self.utilization = utilization
+        self.resetsAt = resetsAt
+        self.limitDollars = limitDollars
+        self.usedDollars = usedDollars
+        self.remainingDollars = remainingDollars
+    }
+
+    /// Friendly label: a curated name for known codenames, otherwise a
+    /// Title-Cased humanization of the raw key (`amberLadder` → "Amber Ladder").
+    public var displayName: String { Self.friendlyNames[key] ?? Self.humanize(key) }
+
+    // Only add a key here once Anthropic has a *confirmed* public meaning for it.
+    // The `/usage` endpoint also ships auto-generated `adjective_noun` codenames
+    // (e.g. `amber_ladder`, `cinder_cove`, `iguana_necktie`, `tangelo`) as slots
+    // for unlaunched/unnamed rate-limit & credit buckets — almost always null.
+    // `amber_ladder` was seen live (2026-06) as a dollar pool (limit_dollars 2500,
+    // ~quarterly reset) on a Team org — likely a usage-credit/Agent-SDK pool, but
+    // unconfirmed. We deliberately humanize these ("Amber Ladder") rather than
+    // guess a name that could be wrong or get renamed. See investigation notes in
+    // the project journal.
+    static let friendlyNames: [String: String] = [
+        "sevenDaySonnet": "Sonnet",
+        "sevenDayOpus": "Opus",
+        "sevenDayOmelette": "Design",
+        "sevenDayCowork": "Cowork",
+        "sevenDayOauthApps": "Connected Apps",
+    ]
+
+    /// Stable ordering: known per-model windows first (Sonnet, Opus, Design, …),
+    /// then everything else alphabetically by display name.
+    static func sorted(_ windows: [AdditionalWindow]) -> [AdditionalWindow] {
+        let priority = ["sevenDaySonnet", "sevenDayOpus", "sevenDayOmelette", "sevenDayCowork", "sevenDayOauthApps"]
+        func rank(_ w: AdditionalWindow) -> Int { priority.firstIndex(of: w.key) ?? priority.count }
+        return windows.sorted { a, b in
+            let ra = rank(a), rb = rank(b)
+            return ra != rb ? ra < rb : a.displayName < b.displayName
+        }
+    }
+
+    /// Turns a camelCase key into spaced Title Case, dropping a leading
+    /// `sevenDay` prefix (`sevenDayFoo` → "Foo", `amberLadder` → "Amber Ladder").
+    static func humanize(_ camel: String) -> String {
+        var rest = Substring(camel)
+        if rest.hasPrefix("sevenDay") { rest = rest.dropFirst("sevenDay".count) }
+        var words: [String] = []
+        var current = ""
+        for ch in rest {
+            if ch.isUppercase && !current.isEmpty {
+                words.append(current)
+                current = String(ch)
+            } else {
+                current.append(ch)
+            }
+        }
+        if !current.isEmpty { words.append(current) }
+        return words.map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ")
+    }
+
+    /// Decodes the raw window object; `utilization` is normalized 0–100 → 0.0–1.0
+    /// to match `WindowUsage`. Used only via `UsageResponse`'s dynamic decoder.
+    struct RawWindow: Decodable {
+        let utilization: Double
+        let resetsAt: Date?
+        let limitDollars: Double?
+        let usedDollars: Double?
+        let remainingDollars: Double?
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            self.utilization = (try c.decode(Double.self, forKey: .utilization)) / 100.0
+            self.resetsAt = try c.decodeIfPresent(Date.self, forKey: .resetsAt)
+            self.limitDollars = try c.decodeIfPresent(Double.self, forKey: .limitDollars)
+            self.usedDollars = try c.decodeIfPresent(Double.self, forKey: .usedDollars)
+            self.remainingDollars = try c.decodeIfPresent(Double.self, forKey: .remainingDollars)
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case utilization, resetsAt, limitDollars, usedDollars, remainingDollars
+        }
+    }
+}
+
+/// String-only coding key for decoding objects with dynamic/unknown field names.
+struct DynamicCodingKey: CodingKey {
+    var stringValue: String
+    var intValue: Int? { nil }
+    init(stringValue: String) { self.stringValue = stringValue }
+    init?(intValue: Int) { nil }
+    init(_ string: String) { self.stringValue = string }
 }
 
 public struct WindowUsage: Codable {

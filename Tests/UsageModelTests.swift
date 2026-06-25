@@ -66,6 +66,66 @@ struct UsageModelTests {
         #expect(abs(usage.sevenDay.utilization - 0.01) < 0.0001)
     }
 
+    @Test func surfacesCodenamedWindowsGenerically() throws {
+        // Real 2026-06 payload shape: per-model windows are null, but the API
+        // carries a codenamed dollar-pool (`amber_ladder`) plus several null
+        // codenames that must be ignored.
+        let json = """
+        {
+          "five_hour": {"utilization": 50.0, "resets_at": "2026-06-25T16:00:00.631702+00:00"},
+          "seven_day": {"utilization": 12.0, "resets_at": "2026-07-01T12:00:00.631730+00:00"},
+          "seven_day_oauth_apps": null,
+          "seven_day_opus": null,
+          "seven_day_sonnet": null,
+          "seven_day_omelette": null,
+          "tangelo": null,
+          "cinder_cove": null,
+          "amber_ladder": {"utilization": 0.0, "resets_at": "2026-09-02T06:59:59+00:00", "limit_dollars": 2500, "used_dollars": 0.0, "remaining_dollars": 2500.0},
+          "extra_usage": {"is_enabled": false, "monthly_limit": null, "used_credits": null, "utilization": null, "currency": "USD"},
+          "limits": [{"kind": "session", "percent": 50}],
+          "spend": {"percent": 0, "enabled": false}
+        }
+        """.data(using: .utf8)!
+
+        let usage = try ClaudeAPIClient.parseUsageResponse(data: json)
+
+        // Null windows and structured fields are excluded; only the live pool remains.
+        #expect(usage.additionalWindows.count == 1)
+        let amber = try #require(usage.additionalWindows.first)
+        #expect(amber.key == "amberLadder")
+        #expect(amber.displayName == "Amber Ladder")
+        #expect(amber.isDollarPool)
+        #expect(amber.limitDollars == 2500)
+        #expect(amber.usedDollars == 0)
+        #expect(abs(amber.utilization - 0.0) < 0.0001)
+        #expect(amber.resetsAt != nil)
+        // Typed shims agree the per-model windows are gone.
+        #expect(usage.sevenDaySonnet == nil)
+        #expect(usage.sevenDayOmelette == nil)
+    }
+
+    @Test func ordersKnownModelWindowsBeforeCodenames() throws {
+        let json = """
+        {
+          "seven_day": {"utilization": 10.0, "resets_at": null},
+          "amber_ladder": {"utilization": 0.0, "resets_at": null, "limit_dollars": 100},
+          "seven_day_sonnet": {"utilization": 5.0, "resets_at": null},
+          "seven_day_opus": {"utilization": 2.0, "resets_at": null}
+        }
+        """.data(using: .utf8)!
+
+        let usage = try ClaudeAPIClient.parseUsageResponse(data: json)
+        #expect(usage.additionalWindows.map(\.key) == ["sevenDaySonnet", "sevenDayOpus", "amberLadder"])
+    }
+
+    @Test func humanizesUnknownCodenames() {
+        #expect(AdditionalWindow(key: "amberLadder", utilization: 0, resetsAt: nil).displayName == "Amber Ladder")
+        #expect(AdditionalWindow(key: "iguanaNecktie", utilization: 0, resetsAt: nil).displayName == "Iguana Necktie")
+        #expect(AdditionalWindow(key: "tangelo", utilization: 0, resetsAt: nil).displayName == "Tangelo")
+        // Known codenames keep their curated name.
+        #expect(AdditionalWindow(key: "sevenDaySonnet", utilization: 0, resetsAt: nil).displayName == "Sonnet")
+    }
+
     @Test func decodeOrganization() throws {
         let json = """
         [{ "uuid": "abc-123", "name": "My Org", "capabilities": ["chat"] }]

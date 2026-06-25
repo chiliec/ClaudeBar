@@ -166,23 +166,37 @@ struct UsageDetailView: View {
 
             slimBar(label: String(localized: "usage.total", bundle: .module), utilization: usage.sevenDay.utilization, resetDate: usage.sevenDay.resetsAt, color: .blue)
 
-            let sonnet = usage.sevenDaySonnet ?? WindowUsage(utilization: 0, resetsAt: nil)
-            slimBar(label: String(localized: "usage.sonnet", bundle: .module), utilization: sonnet.utilization, resetDate: sonnet.resetsAt, color: Color(red: 0.38, green: 0.65, blue: 0.98))
-
-            let design = usage.sevenDayOmelette ?? WindowUsage(utilization: 0, resetsAt: nil)
-            slimBar(label: String(localized: "usage.design", bundle: .module), utilization: design.utilization, resetDate: design.resetsAt, color: Color(red: 0.95, green: 0.60, blue: 0.40))
+            // Per-model windows and codenamed credit pools are decoded generically
+            // (see `UsageResponse.additionalWindows`). We render whatever the API
+            // currently reports as non-null — `null` means "not provisioned", not
+            // "0% used", so those rows simply don't appear. This auto-tracks
+            // Anthropic's frequent window reshuffles without code changes.
+            ForEach(Array(usage.additionalWindows.enumerated()), id: \.element.id) { index, window in
+                slimBar(
+                    label: Self.windowLabel(window),
+                    utilization: window.utilization,
+                    resetDate: window.resetsAt,
+                    color: Self.windowColor(window, index: index),
+                    detail: Self.dollarDetail(window)
+                )
+            }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
     }
 
-    private func slimBar(label: String, utilization: Double, resetDate: Date?, color: Color) -> some View {
+    private func slimBar(label: String, utilization: Double, resetDate: Date?, color: Color, detail: String? = nil) -> some View {
         VStack(spacing: 3) {
             HStack {
                 Text(label)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
+                if let detail {
+                    (Text(verbatim: detail) + Text(verbatim: " ·"))
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                }
                 if let date = resetDate {
                     (Text("usage.resetsIn \(ResetDuration.string(from: date))", bundle: .module) + Text(verbatim: " ·"))
                         .font(.subheadline)
@@ -265,6 +279,51 @@ struct UsageDetailView: View {
         case "JPY": return "¥"
         case let other?: return "\(other) "
         }
+    }
+
+    // MARK: - Generic window presentation
+
+    /// Localized label for the windows we ship translations for; the generic
+    /// (Title-Cased) `displayName` for everything else.
+    static func windowLabel(_ window: AdditionalWindow) -> String {
+        switch window.key {
+        case "sevenDaySonnet": return String(localized: "usage.sonnet", bundle: .module)
+        case "sevenDayOpus": return String(localized: "usage.opus", bundle: .module)
+        case "sevenDayOmelette": return String(localized: "usage.design", bundle: .module)
+        default: return window.displayName
+        }
+    }
+
+    /// Curated colors for the established per-model windows; a cycled palette
+    /// keeps newly-surfaced codenamed windows visually distinct.
+    static func windowColor(_ window: AdditionalWindow, index: Int) -> Color {
+        switch window.key {
+        case "sevenDaySonnet": return Color(red: 0.38, green: 0.65, blue: 0.98)   // blue
+        case "sevenDayOpus": return Color(red: 0.65, green: 0.55, blue: 0.98)      // purple
+        case "sevenDayOmelette": return Color(red: 0.95, green: 0.60, blue: 0.40)  // orange
+        default: return windowPalette[index % windowPalette.count]
+        }
+    }
+
+    private static let windowPalette: [Color] = [
+        Color(red: 0.40, green: 0.80, blue: 0.75),  // teal
+        Color(red: 0.85, green: 0.55, blue: 0.75),  // pink
+        Color(red: 0.60, green: 0.75, blue: 0.45),  // green
+        Color(red: 0.90, green: 0.75, blue: 0.40),  // amber
+    ]
+
+    /// For dollar-denominated pools (credit grants), the "$used / $limit" string
+    /// shown alongside the utilization bar. `nil` for plain per-model windows.
+    static func dollarDetail(_ window: AdditionalWindow) -> String? {
+        guard let limit = window.limitDollars else { return nil }
+        return "\(money(window.usedDollars ?? 0)) / \(money(limit))"
+    }
+
+    private static func money(_ value: Double) -> String {
+        if value == value.rounded() {
+            return "$" + Int(value).formatted(.number.grouping(.automatic))
+        }
+        return "$" + value.formatted(.number.precision(.fractionLength(2)).grouping(.automatic))
     }
 
     private var footer: some View {
