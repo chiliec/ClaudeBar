@@ -3,13 +3,17 @@ import ServiceManagement
 
 public struct SettingsView: View {
     @Bindable public var state: AppState
+    private let updater: SparkleUpdater?
 
     @State private var keyDraft: String = ""
     @State private var inlineKeyError: String?
     @State private var platformPasteDraft: String = ""
     @State private var platformPasteError: String?
 
-    public init(state: AppState) { self.state = state }
+    public init(state: AppState, updater: SparkleUpdater? = nil) {
+        self.state = state
+        self.updater = updater
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -35,6 +39,19 @@ public struct SettingsView: View {
                     GroupBox {
                         VStack(alignment: .leading, spacing: 8) {
                             LaunchAtLoginToggle()
+                            if let updater {
+                                Divider()
+                                HStack {
+                                    Button {
+                                        updater.checkForUpdates()
+                                    } label: {
+                                        Text("action.checkForUpdates", bundle: .module)
+                                    }
+                                    .modifier(BorderedButtonModifier())
+                                    .controlSize(.small)
+                                    Spacer()
+                                }
+                            }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(4)

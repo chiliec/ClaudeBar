@@ -1,4 +1,5 @@
 "action.cancel" = "Cancel";
+"action.checkForUpdates" = "Check for Updates";
 "action.connect" = "Connect";
 "action.done" = "Done";
 "action.quit" = "Quit ClaudeBar";

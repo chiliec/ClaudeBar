@@ -2,9 +2,11 @@ import SwiftUI
 
 public struct PopoverView: View {
     @Bindable public var state: AppState
+    private let updater: SparkleUpdater?
 
-    public init(state: AppState) {
+    public init(state: AppState, updater: SparkleUpdater? = nil) {
         self.state = state
+        self.updater = updater
     }
 
     public var body: some View {
@@ -12,7 +14,7 @@ public struct PopoverView: View {
             if state.showingSettings || state.pendingOrgPick {
                 // Pending-pick state lives in SettingsView; auto-route there
                 // so the user can resolve it from any source view.
-                SettingsView(state: state)
+                SettingsView(state: state, updater: updater)
             } else if state.error == .sessionExpired, state.orgId != nil {
                 // Session-expired routing must precede !isAuthenticated:
                 // handleSessionExpired nils sessionKey, so isAuthenticated is false,

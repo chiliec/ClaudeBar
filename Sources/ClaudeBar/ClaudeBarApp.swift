@@ -8,7 +8,7 @@ struct ClaudeBarApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            PopoverView(state: appState)
+            PopoverView(state: appState, updater: updater)
         } label: {
             if appState.isAuthenticated {
                 HStack(spacing: 4) {

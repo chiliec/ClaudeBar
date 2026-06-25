@@ -1,4 +1,5 @@
 "action.cancel" = "Отмена";
+"action.checkForUpdates" = "Проверить обновления";
 "action.connect" = "Подключить";
 "action.done" = "Готово";
 "action.quit" = "Выйти из ClaudeBar";
