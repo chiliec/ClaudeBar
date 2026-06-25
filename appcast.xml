@@ -11,7 +11,11 @@
       <sparkle:version>0.0.19</sparkle:version>
       <sparkle:shortVersionString>0.0.19</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[]]></description>
+      <description><![CDATA[## What's new in v0.0.19
+
+**Check for Updates button in Settings**
+
+You can now trigger a manual update check directly from the Settings panel — no need to wait for the daily background check. The button appears under Launch at Login and invokes Sparkle immediately.]]></description>
       <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.19/ClaudeBar.zip" sparkle:edSignature="91w3ZrRiMOrObeMHuOWG1o7St+N3NHHhV3CVXAn1/UBoVkhvtaPzJyFyRW9wJkn0J0IJGHzFsJZ0v/5p6P2iAA==" length="5141687" type="application/octet-stream"/>
     </item>
     <item>
