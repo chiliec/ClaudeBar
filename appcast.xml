@@ -6,6 +6,19 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.20</title>
+      <pubDate>Thu, 02 Jul 2026 05:15:55 +0000</pubDate>
+      <sparkle:version>0.0.20</sparkle:version>
+      <sparkle:shortVersionString>0.0.20</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## What's new in v0.0.20
+
+**Clearer label for usage-credit pools**
+
+Dollar-denominated credit pools in the 7-Day Windows section now show as "Usage Credits" (with their $used / $limit balance) instead of an internal codename like "Amber Ladder". The label is driven by the pool's structure, so it stays correct regardless of which codename the API reports.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.20/ClaudeBar.zip" sparkle:edSignature="D40oPMfLQYvtZiRG7rPXZPUWRnxjm1eXw9CIUGQ//HJX5ouk3uUqGxgKf7Qxr1pibb8PcfFkzUgE+40hqTSSAQ==" length="5141713" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.19</title>
       <pubDate>Thu, 25 Jun 2026 15:29:49 +0000</pubDate>
       <sparkle:version>0.0.19</sparkle:version>
