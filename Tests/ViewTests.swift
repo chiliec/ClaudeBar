@@ -306,8 +306,23 @@ struct UsageDetailViewHeaderTests {
             ]
         )
         let inspected = try UsageDetailView(state: state).inspect()
-        _ = try inspected.find(text: "Amber Ladder")
+        _ = try inspected.find(text: "Usage Credits")
         _ = try inspected.find(text: "$0 / $2,500 ·")
+    }
+
+    @Test func nonDollarCodenameStillHumanizes() throws {
+        let state = makeAuthedState(orgs: [
+            Organization(uuid: "org-1", name: "Acme", capabilities: nil),
+        ])
+        state.usage = UsageResponse(
+            fiveHour: WindowUsage(utilization: 0.5, resetsAt: nil),
+            sevenDay: WindowUsage(utilization: 0.12, resetsAt: nil),
+            additionalWindows: [
+                AdditionalWindow(key: "cinderCove", utilization: 0.3, resetsAt: nil),
+            ]
+        )
+        let inspected = try UsageDetailView(state: state).inspect()
+        _ = try inspected.find(text: "Cinder Cove")
     }
 }
 

@@ -65,4 +65,5 @@
 "usage.sonnet" = "Sonnet";
 "usage.title" = "Использование Claude";
 "usage.total" = "Всего";
+"usage.usageCredits" = "Кредитные лимиты";
 "usage.updatedAgo %@" = "Обновлено %@ назад";

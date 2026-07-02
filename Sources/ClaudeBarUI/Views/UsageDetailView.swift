@@ -290,7 +290,11 @@ struct UsageDetailView: View {
         case "sevenDaySonnet": return String(localized: "usage.sonnet", bundle: .module)
         case "sevenDayOpus": return String(localized: "usage.opus", bundle: .module)
         case "sevenDayOmelette": return String(localized: "usage.design", bundle: .module)
-        default: return window.displayName
+        default:
+            if window.isDollarPool {
+                return String(localized: "usage.usageCredits", bundle: .module)
+            }
+            return window.displayName
         }
     }
 

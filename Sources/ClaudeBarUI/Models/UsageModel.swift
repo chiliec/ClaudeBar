@@ -122,11 +122,12 @@ public struct AdditionalWindow: Codable, Equatable, Identifiable {
     // The `/usage` endpoint also ships auto-generated `adjective_noun` codenames
     // (e.g. `amber_ladder`, `cinder_cove`, `iguana_necktie`, `tangelo`) as slots
     // for unlaunched/unnamed rate-limit & credit buckets — almost always null.
-    // `amber_ladder` was seen live (2026-06) as a dollar pool (limit_dollars 2500,
-    // ~quarterly reset) on a Team org — likely a usage-credit/Agent-SDK pool, but
-    // unconfirmed. We deliberately humanize these ("Amber Ladder") rather than
-    // guess a name that could be wrong or get renamed. See investigation notes in
-    // the project journal.
+    // As of 2026-07, no public source (docs, news, or the leaked claudeAiLimits.ts
+    // source map) names any of these slots, so we do NOT hardcode a guess here.
+    // Instead, the view keys off confirmed *structure*: a window with limit_dollars
+    // (e.g. `amber_ladder`, seen live 2026-06 as a $2500 ~quarterly Team pool) is a
+    // usage-credit pool regardless of codename, and renders as "Usage Credits".
+    // Non-dollar unknown codenames fall through to humanize() below.
     static let friendlyNames: [String: String] = [
         "sevenDaySonnet": "Sonnet",
         "sevenDayOpus": "Opus",

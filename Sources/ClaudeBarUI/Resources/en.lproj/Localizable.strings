@@ -65,4 +65,5 @@
 "usage.sonnet" = "Sonnet";
 "usage.title" = "Claude Usage";
 "usage.total" = "Total";
+"usage.usageCredits" = "Usage Credits";
 "usage.updatedAgo %@" = "Updated %@ ago";
