@@ -65,7 +65,33 @@ public struct UsageResponse: Codable {
                 remainingDollars: raw.remainingDollars
             ))
         }
+
+        // As of 2026-07 the per-model `seven_day_*` windows are retired; the
+        // model-specific weekly limit now lives in the `limits` array as a
+        // `weekly_scoped` entry whose `scope.model.display_name` names the model
+        // (e.g. "Fable"). Surface those as per-model windows so they render like
+        // the old Sonnet/Opus rows — driven by the API's own display name, never
+        // a hardcoded codename guess.
+        let limits = (try? container.decode([UsageLimit].self, forKey: DynamicCodingKey("limits"))) ?? []
+        for limit in limits where limit.kind == "weekly_scoped" {
+            guard let name = limit.scope?.model?.displayName, !name.isEmpty else { continue }
+            windows.append(AdditionalWindow(
+                key: Self.modelWindowKey(name),
+                utilization: limit.percent / 100.0,
+                resetsAt: limit.resetsAt,
+                explicitLabel: name,
+                isModelScoped: true
+            ))
+        }
         self.additionalWindows = AdditionalWindow.sorted(windows)
+    }
+
+    /// Synthesizes a stable, `sevenDay`-prefixed key from an API model display
+    /// name so model-scoped windows slot into the existing naming convention
+    /// (`"Fable"` → `"sevenDayFable"`).
+    static func modelWindowKey(_ displayName: String) -> String {
+        let alnum = displayName.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) }
+        return "sevenDay" + String(String.UnicodeScalarView(alnum))
     }
 
     enum CodingKeys: String, CodingKey {
@@ -80,10 +106,31 @@ public struct UsageResponse: Codable {
     }
 }
 
+/// One entry of the `/usage` `limits` array. The API groups rate limits here
+/// by `kind` (`session`, `weekly_all`, `weekly_scoped`); the `weekly_scoped`
+/// ones carry a `scope.model.display_name` naming the model they apply to.
+public struct UsageLimit: Decodable {
+    public let kind: String
+    public let percent: Double
+    public let resetsAt: Date?
+    public let isActive: Bool?
+    public let scope: Scope?
+
+    public struct Scope: Decodable {
+        public let model: Model?
+    }
+    public struct Model: Decodable {
+        public let id: String?
+        public let displayName: String?
+    }
+}
+
 /// A `/usage` window the app doesn't model statically — a per-model rolling
-/// window (Sonnet/Opus/Design) or a codenamed credit pool (e.g. `amber_ladder`).
-/// Anthropic adds and retires these often, so we decode whatever is present and
-/// resolve a display label rather than hardcoding each one.
+/// window (Sonnet/Opus/Design), a codenamed credit pool (e.g. `amber_ladder`),
+/// or a model-scoped weekly limit synthesized from the `limits` array (e.g.
+/// "Fable", carrying an `explicitLabel`). Anthropic adds and retires these
+/// often, so we decode whatever is present and resolve a display label rather
+/// than hardcoding each one.
 public struct AdditionalWindow: Codable, Equatable, Identifiable {
     /// The camelCased API key, e.g. `sevenDaySonnet` or `amberLadder`.
     public let key: String
@@ -94,6 +141,13 @@ public struct AdditionalWindow: Codable, Equatable, Identifiable {
     public let limitDollars: Double?
     public let usedDollars: Double?
     public let remainingDollars: Double?
+    /// A label the API handed us verbatim (e.g. the `scope.model.display_name`
+    /// of a `weekly_scoped` limit — "Fable"). When present it wins over any
+    /// derived name, because the API is stating the real model name itself.
+    public let explicitLabel: String?
+    /// True for windows synthesized from a `weekly_scoped` model limit (as
+    /// opposed to top-level window-shaped keys / codenamed dollar pools).
+    public let isModelScoped: Bool
 
     public var id: String { key }
     public var isDollarPool: Bool { limitDollars != nil }
@@ -104,7 +158,9 @@ public struct AdditionalWindow: Codable, Equatable, Identifiable {
         resetsAt: Date?,
         limitDollars: Double? = nil,
         usedDollars: Double? = nil,
-        remainingDollars: Double? = nil
+        remainingDollars: Double? = nil,
+        explicitLabel: String? = nil,
+        isModelScoped: Bool = false
     ) {
         self.key = key
         self.utilization = utilization
@@ -112,11 +168,14 @@ public struct AdditionalWindow: Codable, Equatable, Identifiable {
         self.limitDollars = limitDollars
         self.usedDollars = usedDollars
         self.remainingDollars = remainingDollars
+        self.explicitLabel = explicitLabel
+        self.isModelScoped = isModelScoped
     }
 
-    /// Friendly label: a curated name for known codenames, otherwise a
-    /// Title-Cased humanization of the raw key (`amberLadder` → "Amber Ladder").
-    public var displayName: String { Self.friendlyNames[key] ?? Self.humanize(key) }
+    /// Friendly label: the API-provided label if any, else a curated name for
+    /// known codenames, else a Title-Cased humanization of the raw key
+    /// (`amberLadder` → "Amber Ladder").
+    public var displayName: String { explicitLabel ?? Self.friendlyNames[key] ?? Self.humanize(key) }
 
     // Only add a key here once Anthropic has a *confirmed* public meaning for it.
     // The `/usage` endpoint also ships auto-generated `adjective_noun` codenames
@@ -140,7 +199,12 @@ public struct AdditionalWindow: Codable, Equatable, Identifiable {
     /// then everything else alphabetically by display name.
     static func sorted(_ windows: [AdditionalWindow]) -> [AdditionalWindow] {
         let priority = ["sevenDaySonnet", "sevenDayOpus", "sevenDayOmelette", "sevenDayCowork", "sevenDayOauthApps"]
-        func rank(_ w: AdditionalWindow) -> Int { priority.firstIndex(of: w.key) ?? priority.count }
+        // Known per-model windows first, then API model-scoped windows (Fable, …),
+        // then everything else (codenamed pools) alphabetically by display name.
+        func rank(_ w: AdditionalWindow) -> Int {
+            if let i = priority.firstIndex(of: w.key) { return i }
+            return w.isModelScoped ? priority.count : priority.count + 1
+        }
         return windows.sorted { a, b in
             let ra = rank(a), rb = rank(b)
             return ra != rb ? ra < rb : a.displayName < b.displayName

@@ -118,6 +118,43 @@ struct UsageModelTests {
         #expect(usage.additionalWindows.map(\.key) == ["sevenDaySonnet", "sevenDayOpus", "amberLadder"])
     }
 
+    @Test func surfacesModelScopedWeeklyLimitFromLimitsArray() throws {
+        // Real 2026-07 payload shape: the per-model `seven_day_*` windows are all
+        // null and the model-specific weekly limit has moved into `limits` as a
+        // `weekly_scoped` entry naming the model via `scope.model.display_name`.
+        let json = """
+        {
+          "five_hour": {"utilization": 21.0, "resets_at": "2026-07-09T07:00:00.409744+00:00"},
+          "seven_day": {"utilization": 9.0, "resets_at": "2026-07-15T12:00:00.409767+00:00"},
+          "seven_day_sonnet": null,
+          "seven_day_opus": null,
+          "seven_day_omelette": null,
+          "amber_ladder": {"utilization": 0.0, "resets_at": "2026-09-02T06:59:59+00:00", "limit_dollars": 2500, "used_dollars": 0.0, "remaining_dollars": 2500.0},
+          "cinder_cove": null,
+          "limits": [
+            {"kind": "session", "group": "session", "percent": 21, "resets_at": "2026-07-09T07:00:00.409744+00:00", "scope": null, "is_active": true},
+            {"kind": "weekly_all", "group": "weekly", "percent": 9, "resets_at": "2026-07-15T12:00:00.409767+00:00", "scope": null, "is_active": false},
+            {"kind": "weekly_scoped", "group": "weekly", "percent": 5, "resets_at": "2026-07-15T12:00:00.410131+00:00", "scope": {"model": {"id": null, "display_name": "Fable"}, "surface": null}, "is_active": false}
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let usage = try ClaudeAPIClient.parseUsageResponse(data: json)
+
+        // A model-scoped Fable window is synthesized from the limits array, and
+        // sorts ahead of the codenamed dollar pool.
+        #expect(usage.additionalWindows.map(\.key) == ["sevenDayFable", "amberLadder"])
+        let fable = try #require(usage.additionalWindows.first)
+        #expect(fable.isModelScoped)
+        #expect(fable.displayName == "Fable")
+        #expect(!fable.isDollarPool)
+        #expect(abs(fable.utilization - 0.05) < 0.0001)
+        #expect(fable.resetsAt != nil)
+        // session / weekly_all limits are not turned into windows (they already
+        // map to five_hour / seven_day).
+        #expect(!usage.additionalWindows.contains { $0.key.contains("eekly") || $0.key.contains("ession") })
+    }
+
     @Test func humanizesUnknownCodenames() {
         #expect(AdditionalWindow(key: "amberLadder", utilization: 0, resetsAt: nil).displayName == "Amber Ladder")
         #expect(AdditionalWindow(key: "iguanaNecktie", utilization: 0, resetsAt: nil).displayName == "Iguana Necktie")
