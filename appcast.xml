@@ -6,6 +6,19 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.21</title>
+      <pubDate>Thu, 09 Jul 2026 10:07:25 +0000</pubDate>
+      <sparkle:version>0.0.21</sparkle:version>
+      <sparkle:shortVersionString>0.0.21</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## What's new in v0.0.21
+
+**Per-model weekly limits keep working after the API change**
+
+Claude.ai moved the per-model weekly limit out of the old `seven_day_*` windows (now empty) and into a new structure that names the model directly — currently "Fable". ClaudeBar now reads that format, so the model's weekly usage reappears in the 7-Day Windows section, labeled with the exact model name the API reports and future-proof against further model renames.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.21/ClaudeBar.zip" sparkle:edSignature="VfDkHLSw+yPqhN6t7rzT9qyTNL3FOnHpKX4JyuZRYdb4HE/s/8PJawdIgQy0FkudD189aDEl2Ne1liHGYD4ZBw==" length="5152218" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.20</title>
       <pubDate>Thu, 02 Jul 2026 05:15:55 +0000</pubDate>
       <sparkle:version>0.0.20</sparkle:version>
