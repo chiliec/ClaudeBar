@@ -49,6 +49,42 @@ struct AppStateTests {
         #expect(visible.map(\.uuid) == ["y"])
     }
 
+    // MARK: - Selectable Organizations
+
+    @Test func selectableOrganizationsPrefersPaidOrgs() {
+        let state = makeState()
+        state.organizations = [
+            Organization(uuid: "paid-1", name: "Acme", capabilities: ["claude_max"]),
+            Organization(uuid: "free-1", name: "Personal", capabilities: ["chat"]),
+        ]
+        #expect(state.selectableOrganizations.map(\.uuid) == ["paid-1"])
+    }
+
+    @Test func selectableOrganizationsFallsBackToAllWhenNonePaid() {
+        // The gap that stranded connect: several orgs, none carrying a
+        // recognized paid capability. visibleOrganizations is empty, so the
+        // picker never showed and auto-connect never fired. selectable must
+        // fall back to the full list so the user can still pick.
+        let state = makeState()
+        state.organizations = [
+            Organization(uuid: "a", name: "One", capabilities: ["chat"]),
+            Organization(uuid: "b", name: "Two", capabilities: nil),
+        ]
+        #expect(state.visibleOrganizations.isEmpty)
+        #expect(state.selectableOrganizations.map(\.uuid) == ["a", "b"])
+    }
+
+    @Test func selectableOrganizationsSinglePaidAmongManyIsOne() {
+        // Single-paid-org account (personal + paid workspace). selectable
+        // count == 1 → validateAndFetchOrgs auto-connects instead of silence.
+        let state = makeState()
+        state.organizations = [
+            Organization(uuid: "personal", name: "Me", capabilities: ["chat"]),
+            Organization(uuid: "work", name: "Work", capabilities: ["claude_max"]),
+        ]
+        #expect(state.selectableOrganizations.map(\.uuid) == ["work"])
+    }
+
     // MARK: - Authentication State
 
     @Test func initialStateIsNotAuthenticated() {

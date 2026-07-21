@@ -67,14 +67,14 @@ struct SessionKeyInputView: View {
                 .font(.system(size: 13, design: .monospaced))
                 .onSubmit { submit() }
 
-            if state.visibleOrganizations.count > 1 {
+            if state.selectableOrganizations.count > 1 {
                 Text("setup.selectOrganization", bundle: .module)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Picker("", selection: $selectedOrgId) {
                     Text("setup.chooseOrganization", bundle: .module)
                         .tag(nil as String?)
-                    ForEach(state.visibleOrganizations, id: \.uuid) { org in
+                    ForEach(state.selectableOrganizations, id: \.uuid) { org in
                         Text(org.displayName).tag(org.uuid as String?)
                     }
                 }

@@ -15,6 +15,7 @@
 "apiError.rateLimited" = "Превышен лимит запросов";
 "apiError.sessionExpired" = "Сессия истекла";
 "error.api %@" = "Ошибка API: %@";
+"error.noOrganizations" = "Для этого ключа сессии не найдено организаций";
 "error.rateLimited" = "Превышен лимит запросов — повтор позже";
 "error.sessionExpired" = "Сессия истекла — обновите ключ";
 "section.apiCredits" = "API кредиты";

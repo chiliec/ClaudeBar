@@ -19,6 +19,14 @@ public final class AppState {
         organizations.filter { $0.isPaidPlan || $0.uuid == orgId }
     }
 
+    /// Orgs offered when connecting/switching. Prefers paid/trackable orgs, but
+    /// falls back to the full list when none carry a recognized paid capability —
+    /// so a user is never stranded with no selectable org (e.g. if Claude.ai
+    /// renames the capability markers `isPaidPlan` keys off of).
+    public var selectableOrganizations: [Organization] {
+        visibleOrganizations.isEmpty ? organizations : visibleOrganizations
+    }
+
     // MARK: - Pending Key-Update State
     /// Set while the user is updating their session key and the new key
     /// belongs to a different account (current orgId is not in the new org list).
@@ -153,10 +161,20 @@ public final class AppState {
         self.sessionKey = sessionKey
         do {
             organizations = try await ClaudeAPIClient.fetchOrganizations(sessionKey: sessionKey)
-            if organizations.count == 1 {
-                try saveCredentials(sessionKey: sessionKey, orgId: organizations[0].uuid)
+            NSLog("ClaudeBar: fetchOrganizations returned %d org(s), %d selectable",
+                  organizations.count, selectableOrganizations.count)
+            if organizations.isEmpty {
+                // Valid session but the account exposes no organizations — surface
+                // it instead of silently sitting on the input screen.
+                error = .noOrganizations
+                self.sessionKey = nil
+            } else if selectableOrganizations.count == 1 {
+                // Exactly one connectable org (either the only org, or the single
+                // paid one among several) — connect it without a picker.
+                try saveCredentials(sessionKey: sessionKey, orgId: selectableOrganizations[0].uuid)
                 startPolling()
             }
+            // Otherwise multiple selectable orgs — SessionKeyInputView shows the picker.
         } catch let apiError as APIError {
             error = .api(apiError)
             self.sessionKey = nil
@@ -414,12 +432,14 @@ public enum AppError: Equatable {
     case api(APIError)
     case sessionExpired
     case rateLimited
+    case noOrganizations
     case network(String)
 
     public var message: String {
         switch self {
         case .sessionExpired: return String(localized: "error.sessionExpired", bundle: .module)
         case .rateLimited: return String(localized: "error.rateLimited", bundle: .module)
+        case .noOrganizations: return String(localized: "error.noOrganizations", bundle: .module)
         case .api(let e): return String(localized: "error.api \(e.displayMessage)", bundle: .module)
         case .network(let msg): return msg
         }

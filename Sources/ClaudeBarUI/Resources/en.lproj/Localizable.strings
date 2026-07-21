@@ -15,6 +15,7 @@
 "apiError.rateLimited" = "Rate limited";
 "apiError.sessionExpired" = "Session expired";
 "error.api %@" = "API error: %@";
+"error.noOrganizations" = "No organizations found for this session key";
 "error.rateLimited" = "Rate limited — will retry";
 "error.sessionExpired" = "Session expired — update your key";
 "section.apiCredits" = "API Credits";
