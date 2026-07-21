@@ -6,6 +6,19 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.22</title>
+      <pubDate>Tue, 21 Jul 2026 01:51:30 +0000</pubDate>
+      <sparkle:version>0.0.22</sparkle:version>
+      <sparkle:shortVersionString>0.0.22</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[## What's new in v0.0.22
+
+**Fixes a silent failure when connecting your session key**
+
+If your Claude.ai account exposes more than one organization but only one of them is a paid/trackable plan (a very common setup — a personal org alongside your paid workspace), pasting your `sessionKey` and hitting Connect did nothing: no usage, no organization picker, no error. ClaudeBar now connects the single paid organization automatically in that case, shows a picker whenever there's a real choice, and surfaces a clear message when an account has no organizations at all — so connecting never dead-ends silently again.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.22/ClaudeBar.zip" sparkle:edSignature="iJXM+1qo+2dYrION3lAp/0BeyAHpeQlyO7fCwKlLncNoYH1d2vYrUekoO53hSK8wkaBseyHeTlOMXETwG/dDBw==" length="5153497" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.21</title>
       <pubDate>Thu, 09 Jul 2026 10:07:25 +0000</pubDate>
       <sparkle:version>0.0.21</sparkle:version>
