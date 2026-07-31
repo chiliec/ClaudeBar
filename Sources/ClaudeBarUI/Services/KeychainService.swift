@@ -1,7 +1,13 @@
 import Foundation
 import Security
 
-public struct KeychainService {
+public protocol KeychainServicing {
+    func save(account: String, value: String) throws
+    func retrieve(account: String) throws -> String?
+    func delete(account: String) throws
+}
+
+public struct KeychainService: KeychainServicing {
     public let serviceName: String
 
     public init(serviceName: String = "com.claudebar") {

@@ -20,6 +20,11 @@ public struct PopoverView: View {
                 // handleSessionExpired nils sessionKey, so isAuthenticated is false,
                 // but the cached orgId lets us show the personalized reconnect view.
                 SessionExpiredView(state: state)
+            } else if state.error == .keychainLocked {
+                // Same ordering reason as sessionExpired above: a Keychain
+                // failure during loadCredentials also leaves isAuthenticated
+                // false, so this must be checked before the SetupView fallback.
+                KeychainLockedView(state: state)
             } else if !state.isAuthenticated {
                 SetupView(state: state)
             } else {

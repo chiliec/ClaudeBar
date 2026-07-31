@@ -585,6 +585,44 @@ struct AppStateTests {
         #expect(state.platformSessionKey == "sk-platform-restored")
     }
 
+    private struct FakeKeychain: KeychainServicing {
+        var throwingAccounts: Set<String> = []
+        var values: [String: String] = [:]
+        func save(account: String, value: String) throws {}
+        func retrieve(account: String) throws -> String? {
+            if throwingAccounts.contains(account) {
+                throw KeychainError.retrieveFailed(-1)
+            }
+            return values[account]
+        }
+        func delete(account: String) throws {}
+    }
+
+    @Test func loadCredentialsSetsKeychainLockedOnRetrieveFailure() {
+        // A real Keychain failure (e.g. the app's signing identity changed since
+        // the item was saved) must not look identical to "no credentials yet" —
+        // that regression would silently show the setup screen instead of
+        // explaining why the saved session is inaccessible.
+        let keychain = FakeKeychain(throwingAccounts: ["credentials"])
+        let state = AppState(keychain: keychain, orgListStore: InMemoryOrgListStore())
+
+        #expect(state.error == .keychainLocked)
+        #expect(state.isAuthenticated == false)
+    }
+
+    @Test func loadCredentialsKeychainLockedStillLoadsPlatformKey() {
+        // The platform key is a separate keychain item; a failure reading the
+        // claude.ai credentials must not prevent a best-effort platform read.
+        let keychain = FakeKeychain(
+            throwingAccounts: ["credentials"],
+            values: ["platform_credentials": "sk-platform"]
+        )
+        let state = AppState(keychain: keychain, orgListStore: InMemoryOrgListStore())
+
+        #expect(state.error == .keychainLocked)
+        #expect(state.platformSessionKey == "sk-platform")
+    }
+
     @Test func applyPlatformCreditsSuccessSetsValueAndClearsStale() {
         let state = makeState()
         state.platformCreditsIsStale = true

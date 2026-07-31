@@ -16,8 +16,11 @@
 "apiError.sessionExpired" = "Session expired";
 "error.api %@" = "API error: %@";
 "error.noOrganizations" = "No organizations found for this session key";
+"error.keychainLocked" = "Keychain access denied — re-enter your key";
 "error.rateLimited" = "Rate limited — will retry";
 "error.sessionExpired" = "Session expired — update your key";
+"keychain.locked" = "Keychain Access Denied";
+"keychain.lockedSubtitle" = "macOS blocked access to your saved session, usually after an app update changes its signing certificate. Paste your sessionKey again from claude.ai cookies.";
 "section.apiCredits" = "API Credits";
 "session.expired" = "Session Expired";
 "session.expiredSubtitle" = "Your sessionKey has expired. Paste a new one from claude.ai cookies.";

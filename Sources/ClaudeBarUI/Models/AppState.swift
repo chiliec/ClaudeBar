@@ -61,13 +61,13 @@ public final class AppState {
     public var showingSettings = false
 
     // MARK: - Services
-    private let keychain: KeychainService
+    private let keychain: any KeychainServicing
     private let orgListStore: OrgListStore
     private var pollTimer: Timer?
     public var pollInterval: TimeInterval = 300 // 5 minutes
 
     public init(
-        keychain: KeychainService = KeychainService(),
+        keychain: any KeychainServicing = KeychainService(),
         orgListStore: OrgListStore = UserDefaultsOrgListStore()
     ) {
         self.keychain = keychain
@@ -106,16 +106,25 @@ public final class AppState {
     private static let platformCredentialsAccount = "platform_credentials"
 
     public func loadCredentials() {
-        guard let stored = try? keychain.retrieve(account: Self.credentialsAccount) else {
-            // Even with no claude.ai credentials, a platform key may exist independently.
+        do {
+            guard let stored = try keychain.retrieve(account: Self.credentialsAccount) else {
+                // Even with no claude.ai credentials, a platform key may exist independently.
+                platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
+                return
+            }
+            let parts = stored.split(separator: Self.credentialsSeparator, maxSplits: 1)
+            guard parts.count == 2 else { return }
+            sessionKey = String(parts[0])
+            orgId = String(parts[1])
             platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
-            return
+        } catch {
+            // A real Keychain failure (e.g. macOS denies access because the app's
+            // code signing identity changed since the item was saved) is not the
+            // same as no credentials existing yet — surface it instead of
+            // silently looking logged out.
+            platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
+            self.error = .keychainLocked
         }
-        let parts = stored.split(separator: Self.credentialsSeparator, maxSplits: 1)
-        guard parts.count == 2 else { return }
-        sessionKey = String(parts[0])
-        orgId = String(parts[1])
-        platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
     }
 
     public func saveCredentials(sessionKey: String, orgId: String) throws {
@@ -434,6 +443,7 @@ public enum AppError: Equatable {
     case rateLimited
     case noOrganizations
     case network(String)
+    case keychainLocked
 
     public var message: String {
         switch self {
@@ -442,6 +452,7 @@ public enum AppError: Equatable {
         case .noOrganizations: return String(localized: "error.noOrganizations", bundle: .module)
         case .api(let e): return String(localized: "error.api \(e.displayMessage)", bundle: .module)
         case .network(let msg): return msg
+        case .keychainLocked: return String(localized: "error.keychainLocked", bundle: .module)
         }
     }
 }
