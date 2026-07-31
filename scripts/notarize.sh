@@ -59,7 +59,7 @@ fi
 echo "==> Verifying"
 xcrun stapler validate "$APP_PATH"
 
-SPCTL_OUTPUT=$(spctl -a -vvv -t install "$APP_PATH" 2>&1)
+SPCTL_OUTPUT=$(spctl -a -vvv -t install "$APP_PATH" 2>&1) || true
 echo "$SPCTL_OUTPUT"
 if ! echo "$SPCTL_OUTPUT" | grep -q "source=Notarized Developer ID"; then
     echo "ERROR: Gatekeeper does not report this bundle as notarized Developer ID."
