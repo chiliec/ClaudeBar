@@ -6,6 +6,20 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.23</title>
+      <pubDate>Fri, 31 Jul 2026 17:29:39 +0000</pubDate>
+      <sparkle:version>0.0.23</sparkle:version>
+      <sparkle:shortVersionString>0.0.23</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Notarized builds
+
+ClaudeBar is now signed with an Apple Developer ID certificate and notarized
+by Apple. macOS no longer shows a Gatekeeper warning on first launch.
+
+No action needed — this update installs like any other.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.23/ClaudeBar.zip" sparkle:edSignature="h6ouyfAjkYRaIpEnvCLVFFSQ12T2VOiiSzIRbuRojDrNMgEHNhsCTRNbV5bMn1NZfwTt5b29Suu7BR6JVX55AQ==" length="3188270" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.22</title>
       <pubDate>Tue, 21 Jul 2026 01:51:30 +0000</pubDate>
       <sparkle:version>0.0.22</sparkle:version>
