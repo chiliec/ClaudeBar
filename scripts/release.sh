@@ -15,7 +15,10 @@ APP_NAME="ClaudeBar"
 BUILD_DIR=".build/release"
 BUNDLE_DIR="$BUILD_DIR/$APP_NAME.app"
 ZIP_FILE="$BUILD_DIR/$APP_NAME.zip"
-SIGN_IDENTITY="Apple Development: Vladimir Babin (8FNR8DGE9N)"
+# shellcheck source=lib/sign.sh
+source "$(dirname "$0")/lib/sign.sh"
+SIGN_IDENTITY=$(resolve_identity release)
+NOTARY_PROFILE="${NOTARY_PROFILE:-claudebar-notary}"
 SPARKLE_BIN_DIR="${SPARKLE_BIN_DIR:-./scripts/sparkle-bin}"
 SIGN_UPDATE="$SPARKLE_BIN_DIR/sign_update"
 TAP_PATH="${HOMEBREW_TAP_PATH:-../homebrew-tap}"
@@ -24,8 +27,18 @@ APPCAST_FILE="./appcast.xml"
 
 # ---- Prerequisite checks ----------------------------------------------------
 
-if ! security find-identity -v -p codesigning | grep -q "$SIGN_IDENTITY"; then
-    echo "ERROR: signing identity '$SIGN_IDENTITY' not found in Keychain."
+# The signing identity was already resolved and validated above by
+# resolve_identity, which aborts if no Developer ID certificate exists.
+echo "==> Signing identity: $SIGN_IDENTITY"
+
+if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+    echo "ERROR: notarytool keychain profile '$NOTARY_PROFILE' is missing or invalid."
+    echo "Run the one-time setup in docs/RELEASING.md, then retry."
+    exit 1
+fi
+
+if [ ! -x "./scripts/notarize.sh" ]; then
+    echo "ERROR: ./scripts/notarize.sh is missing or not executable."
     exit 1
 fi
 
@@ -86,17 +99,19 @@ ditto "$BUILD_DIR/Sparkle.framework" "$BUNDLE_DIR/Contents/Frameworks/Sparkle.fr
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$BUNDLE_DIR/Contents/MacOS/$APP_NAME"
 
 echo "==> Signing Sparkle.framework internals + app"
-SPARKLE_FW="$BUNDLE_DIR/Contents/Frameworks/Sparkle.framework"
-codesign --force --sign "$SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/XPCServices/Downloader.xpc"
-codesign --force --sign "$SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/XPCServices/Installer.xpc"
-codesign --force --sign "$SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/Updater.app"
-codesign --force --sign "$SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/Autoupdate"
-codesign --force --sign "$SIGN_IDENTITY" "$SPARKLE_FW"
-codesign --force --sign "$SIGN_IDENTITY" --entitlements Sources/ClaudeBar/ClaudeBar.entitlements "$BUNDLE_DIR"
+sign_bundle "$BUNDLE_DIR" "$SIGN_IDENTITY" release
+verify_bundle "$BUNDLE_DIR"
 
-echo "==> Zipping"
+echo "==> Notarizing"
+NOTARY_PROFILE="$NOTARY_PROFILE" ./scripts/notarize.sh "$BUNDLE_DIR"
+
+# Archive AFTER stapling. Stapling mutates the bundle, so the Sparkle
+# edSignature, the enclosure length, and the cask sha256 -- all computed below
+# from $ZIP_FILE -- must describe the stapled bytes users actually download.
+# ditto rather than zip: zip does not faithfully preserve bundle symlinks.
+echo "==> Zipping (post-staple)"
 rm -f "$ZIP_FILE"
-(cd "$BUILD_DIR" && zip -r -q "$APP_NAME.zip" "$APP_NAME.app")
+ditto -c -k --sequesterRsrc --keepParent "$BUNDLE_DIR" "$ZIP_FILE"
 
 # ---- Sparkle signature + appcast entry -------------------------------------
 
