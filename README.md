@@ -29,7 +29,7 @@ That's it. After install, the app updates itself: Sparkle checks daily and shows
 
 ### Manual install (without Homebrew)
 
-Download the latest `.zip` from [Releases](https://github.com/chiliec/ClaudeBar/releases), unzip, drag `ClaudeBar.app` to `/Applications`, then double-click. The first launch shows the same Gatekeeper prompt as above.
+Download the latest `.zip` from [Releases](https://github.com/chiliec/ClaudeBar/releases), unzip, drag `ClaudeBar.app` to `/Applications`, then double-click. Builds are notarized by Apple, so macOS opens the app without a Gatekeeper warning.
 
 ### Build from source
 
