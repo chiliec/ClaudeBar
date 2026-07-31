@@ -24,27 +24,13 @@ if [ -d "$BUILD_DIR/Sparkle.framework" ]; then
     install_name_tool -add_rpath "@executable_path/../Frameworks" "$BUNDLE_DIR/Contents/MacOS/$APP_NAME"
 fi
 
-# Use CODE_SIGN_IDENTITY env var if set, otherwise auto-detect
-if [ -z "$CODE_SIGN_IDENTITY" ]; then
-    CODE_SIGN_IDENTITY=$(security find-identity -v -p codesigning | grep "Apple Development" | head -1 | sed 's/.*"\(.*\)".*/\1/')
-fi
+# shellcheck source=lib/sign.sh
+source "$(dirname "$0")/lib/sign.sh"
 
-if [ -z "$CODE_SIGN_IDENTITY" ]; then
-    echo "Warning: No Apple Development certificate found. Using ad-hoc signing."
-    echo "  Set CODE_SIGN_IDENTITY env var or install a development certificate."
-    CODE_SIGN_IDENTITY="-"
-fi
-
+CODE_SIGN_IDENTITY=$(resolve_identity dev)
 echo "Signing with: $CODE_SIGN_IDENTITY"
-if [ -d "$BUNDLE_DIR/Contents/Frameworks/Sparkle.framework" ]; then
-    SPARKLE_FW="$BUNDLE_DIR/Contents/Frameworks/Sparkle.framework"
-    codesign --force --sign "$CODE_SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/XPCServices/Downloader.xpc"
-    codesign --force --sign "$CODE_SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/XPCServices/Installer.xpc"
-    codesign --force --sign "$CODE_SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/Updater.app"
-    codesign --force --sign "$CODE_SIGN_IDENTITY" "$SPARKLE_FW/Versions/B/Autoupdate"
-    codesign --force --sign "$CODE_SIGN_IDENTITY" "$SPARKLE_FW"
-fi
-codesign --force --sign "$CODE_SIGN_IDENTITY" --entitlements Sources/ClaudeBar/ClaudeBar.entitlements "$BUNDLE_DIR"
+sign_bundle "$BUNDLE_DIR" "$CODE_SIGN_IDENTITY" dev
+verify_bundle "$BUNDLE_DIR"
 
 echo "Done: $BUNDLE_DIR"
 echo "To install: cp -r $BUNDLE_DIR /Applications/"
