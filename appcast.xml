@@ -6,6 +6,15 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.24</title>
+      <pubDate>Fri, 31 Jul 2026 20:57:44 +0000</pubDate>
+      <sparkle:version>0.0.24</sparkle:version>
+      <sparkle:shortVersionString>0.0.24</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.24/ClaudeBar.zip" sparkle:edSignature="NWFvlKIbRTTpfPKbBqewGC2A8bh8k4cNo+h87b4bCdthj6NBegDK+K0OlT9+LARPbyCn7e9Ala0xJ1f98E2sCQ==" length="3191630" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.23</title>
       <pubDate>Fri, 31 Jul 2026 17:29:39 +0000</pubDate>
       <sparkle:version>0.0.23</sparkle:version>
