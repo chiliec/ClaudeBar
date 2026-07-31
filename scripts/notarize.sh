@@ -35,7 +35,7 @@ else
 
     echo "==> Submitting to Apple notary service (expect a few minutes)"
     SUBMIT_OUTPUT=$(xcrun notarytool submit "$SUBMIT_ZIP" \
-        --keychain-profile "$PROFILE" --wait --output-format json)
+        --keychain-profile "$PROFILE" --wait --output-format json) || true
     echo "$SUBMIT_OUTPUT"
 
     SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" \

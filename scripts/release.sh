@@ -31,6 +31,13 @@ APPCAST_FILE="./appcast.xml"
 # resolve_identity, which aborts if no Developer ID certificate exists.
 echo "==> Signing identity: $SIGN_IDENTITY"
 
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo "ERROR: release.sh must be run from the 'main' branch (currently on '$CURRENT_BRANCH')."
+    echo "  Merge this branch to main first, then re-run from a checkout of main."
+    exit 1
+fi
+
 if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
     echo "ERROR: notarytool keychain profile '$NOTARY_PROFILE' is missing or invalid."
     echo "Run the one-time setup in docs/RELEASING.md, then retry."

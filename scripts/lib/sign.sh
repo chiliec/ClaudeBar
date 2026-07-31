@@ -48,6 +48,7 @@ resolve_identity() {
             if [ -z "$id" ]; then
                 echo "Warning: no Apple Development certificate found. Using ad-hoc signing." >&2
                 echo "  Set CODE_SIGN_IDENTITY or install a development certificate." >&2
+                echo "  Hardened runtime is skipped for ad-hoc builds (see sign_bundle)." >&2
                 id="-"
             fi
             ;;
@@ -62,10 +63,15 @@ resolve_identity() {
 
 # sign_bundle <bundle-path> <identity> <release|dev>
 #
-# Hardened runtime is applied in both modes so that a hardened-runtime problem
-# with the bundled Sparkle.framework surfaces during a local ./scripts/bundle.sh
-# rather than mid-release. A secure timestamp is release-only because it
-# requires network access.
+# Hardened runtime is applied for any real identity (a development certificate
+# in dev mode, or the Developer ID certificate in release mode) so that a
+# hardened-runtime problem with the bundled Sparkle.framework surfaces during
+# a local ./scripts/bundle.sh rather than mid-release. It is skipped entirely
+# for ad-hoc signing (identity "-"): ad-hoc has no Team ID, and hardened
+# runtime's library validation rejects loading a framework whose Team ID
+# doesn't match -- crashing an otherwise-fine ad-hoc build at launch. Ad-hoc
+# builds can't be notarized regardless, so nothing is lost by skipping it. A
+# secure timestamp is release-only because it requires network access.
 sign_bundle() {
     local bundle="$1"
     local identity="$2"
@@ -77,7 +83,10 @@ sign_bundle() {
         return 1
     fi
 
-    set -- --force --options runtime
+    set -- --force
+    if [ "$identity" != "-" ]; then
+        set -- "$@" --options runtime
+    fi
     if [ "$mode" = "release" ]; then
         set -- "$@" --timestamp
     fi
