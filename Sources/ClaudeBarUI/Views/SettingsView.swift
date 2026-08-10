@@ -5,8 +5,6 @@ public struct SettingsView: View {
     @Bindable public var state: AppState
     private let updater: SparkleUpdater?
 
-    @State private var keyDraft: String = ""
-    @State private var inlineKeyError: String?
     @State private var platformPasteDraft: String = ""
     @State private var platformPasteError: String?
 
@@ -75,11 +73,7 @@ public struct SettingsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 connectionStatusLine
 
-                if state.isAuthenticated && !state.pendingOrgPick {
-                    sessionKeyEditor
-                    if state.visibleOrganizations.count > 1 {
-                        orgPicker
-                    }
+                if state.isAuthenticated {
                     Button {
                         state.signOut()
                     } label: {
@@ -88,10 +82,6 @@ public struct SettingsView: View {
                     .buttonStyle(.borderless)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                }
-
-                if state.pendingOrgPick {
-                    pendingPickPrompt
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -192,7 +182,7 @@ public struct SettingsView: View {
             Circle()
                 .fill(state.isAuthenticated ? .green : .red)
                 .frame(width: 8, height: 8)
-            if state.isAuthenticated, let orgName = currentOrgName() {
+            if state.isAuthenticated, let orgName = state.organizationDetails?.name {
                 Text("settings.connectedAs \(orgName)", bundle: .module)
                     .font(.subheadline)
             } else if state.isAuthenticated {
@@ -205,104 +195,6 @@ public struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private var sessionKeyEditor: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("settings.sessionKey", bundle: .module)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            HStack {
-                SecureField("", text: $keyDraft, prompt: Text("setup.sessionKeyPlaceholder", bundle: .module))
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 12, design: .monospaced))
-                Button {
-                    inlineKeyError = nil
-                    Task {
-                        await state.updateSessionKey(keyDraft)
-                        switch state.error {
-                        case .api(.sessionExpired):
-                            inlineKeyError = String(localized: "update.badKey", bundle: .module)
-                        case .some(let err):
-                            inlineKeyError = err.message
-                        case .none:
-                            keyDraft = ""
-                        }
-                    }
-                } label: {
-                    Text("action.update", bundle: .module)
-                }
-                .modifier(BorderedButtonModifier())
-                .controlSize(.small)
-                .disabled(keyDraft.isEmpty || state.isLoading)
-            }
-            if let inlineKeyError {
-                Text(inlineKeyError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var orgPicker: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("settings.organization", bundle: .module)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Picker("", selection: orgSelectionBinding) {
-                ForEach(state.visibleOrganizations, id: \.uuid) { org in
-                    Text(org.displayName).tag(org.uuid as String?)
-                }
-            }
-            .labelsHidden()
-        }
-    }
-
-    @ViewBuilder
-    private var pendingPickPrompt: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("update.wrongAccount", bundle: .module)
-                .font(.subheadline)
-                .foregroundStyle(.orange)
-            ForEach(state.pendingOrganizations, id: \.uuid) { org in
-                Button {
-                    Task { await state.confirmPendingOrg(org) }
-                } label: {
-                    Text(org.displayName)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-            Button {
-                state.cancelPendingOrgPick()
-                keyDraft = ""
-                inlineKeyError = nil
-            } label: {
-                Text("action.cancel", bundle: .module)
-            }
-            .buttonStyle(.borderless)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-    }
-
-    private func currentOrgName() -> String? {
-        guard let orgId = state.orgId else { return nil }
-        return state.organizations.first(where: { $0.uuid == orgId })?.displayName
-    }
-
-    private var orgSelectionBinding: Binding<String?> {
-        Binding(
-            get: { state.orgId },
-            set: { newValue in
-                guard let uuid = newValue,
-                      uuid != state.orgId,
-                      let org = state.organizations.first(where: { $0.uuid == uuid }) else { return }
-                Task { await state.switchOrganization(to: org) }
-            }
-        )
-    }
 }
 
 struct LaunchAtLoginToggle: View {
@@ -328,35 +220,16 @@ struct LaunchAtLoginToggle: View {
 }
 
 #Preview("Settings - Connected") {
-    let state = AppState(
-        keychain: KeychainService(serviceName: "com.claudebar.preview"),
-        orgListStore: InMemoryOrgListStore(initial: [
-            Organization(uuid: "fake-org", name: "Acme Inc", capabilities: nil)
-        ])
+    let state = AppState(keychain: KeychainService(serviceName: "com.claudebar.preview"))
+    state.credentials = OAuthCredentials(
+        accessToken: "fake-token",
+        refreshToken: "fake-refresh",
+        expiresAt: Date().addingTimeInterval(3600)
     )
-    state.sessionKey = "fake-key"
-    state.orgId = "fake-org"
-    state.organizations = [Organization(uuid: "fake-org", name: "Acme Inc", capabilities: nil)]
-    return SettingsView(state: state)
-}
-
-#Preview("Settings - Multi-Org") {
-    let state = AppState(
-        keychain: KeychainService(serviceName: "com.claudebar.preview"),
-        orgListStore: InMemoryOrgListStore()
-    )
-    state.sessionKey = "fake-key"
-    state.orgId = "org-1"
-    state.organizations = [
-        Organization(uuid: "org-1", name: "Personal", capabilities: nil),
-        Organization(uuid: "org-2", name: "Work", capabilities: nil),
-    ]
+    state.organizationDetails = OrganizationDetails(uuid: "fake-org", name: "Acme Inc", rateLimitTier: "default_claude_max_5x")
     return SettingsView(state: state)
 }
 
 #Preview("Settings - Disconnected") {
-    SettingsView(state: AppState(
-        keychain: KeychainService(serviceName: "com.claudebar.preview"),
-        orgListStore: InMemoryOrgListStore()
-    ))
+    SettingsView(state: AppState(keychain: KeychainService(serviceName: "com.claudebar.preview")))
 }

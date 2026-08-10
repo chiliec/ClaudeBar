@@ -4,36 +4,8 @@ import SwiftUI
 @Observable
 public final class AppState {
     // MARK: - Auth State
-    public var sessionKey: String?
-    public var orgId: String?
-    public var organizations: [Organization] = [] {
-        didSet { orgListStore.save(organizations) }
-    }
-    public var isAuthenticated: Bool { sessionKey != nil && orgId != nil }
-
-    /// Subset of `organizations` shown in switcher UIs. Hides free/individual
-    /// orgs (no paid capability marker) since their usage is not tracked here.
-    /// The currently-active org is always kept visible so the user can navigate
-    /// out of it even if it happens to be unpaid.
-    public var visibleOrganizations: [Organization] {
-        organizations.filter { $0.isPaidPlan || $0.uuid == orgId }
-    }
-
-    /// Orgs offered when connecting/switching. Prefers paid/trackable orgs, but
-    /// falls back to the full list when none carry a recognized paid capability —
-    /// so a user is never stranded with no selectable org (e.g. if Claude.ai
-    /// renames the capability markers `isPaidPlan` keys off of).
-    public var selectableOrganizations: [Organization] {
-        visibleOrganizations.isEmpty ? organizations : visibleOrganizations
-    }
-
-    // MARK: - Pending Key-Update State
-    /// Set while the user is updating their session key and the new key
-    /// belongs to a different account (current orgId is not in the new org list).
-    /// While true, polling is paused and the Settings UI shows an inline picker.
-    public var pendingOrgPick: Bool = false
-    public var pendingSessionKey: String?
-    public var pendingOrganizations: [Organization] = []
+    public var credentials: OAuthCredentials?
+    public var isAuthenticated: Bool { credentials != nil }
 
     // MARK: - Usage State
     public var usage: UsageResponse?
@@ -62,17 +34,11 @@ public final class AppState {
 
     // MARK: - Services
     private let keychain: any KeychainServicing
-    private let orgListStore: OrgListStore
     private var pollTimer: Timer?
     public var pollInterval: TimeInterval = 300 // 5 minutes
 
-    public init(
-        keychain: any KeychainServicing = KeychainService(),
-        orgListStore: OrgListStore = UserDefaultsOrgListStore()
-    ) {
+    public init(keychain: any KeychainServicing = KeychainService()) {
         self.keychain = keychain
-        self.orgListStore = orgListStore
-        self.organizations = orgListStore.load()  // triggers didSet, harmless idempotent save
         loadCredentials()
         if isAuthenticated {
             // Defer polling start to next run loop to avoid publishing changes during init
@@ -100,22 +66,14 @@ public final class AppState {
 
     // MARK: - Lifecycle
 
-    // Store both values in a single keychain item to avoid multiple password prompts on launch
-    private static let credentialsAccount = "credentials"
-    private static let credentialsSeparator: Character = "\0"
+    private static let legacyCredentialsAccount = "credentials"
     private static let platformCredentialsAccount = "platform_credentials"
 
     public func loadCredentials() {
+        // One-time migration: the pasted claude.ai sessionKey is dead weight now.
+        try? keychain.delete(account: Self.legacyCredentialsAccount)
         do {
-            guard let stored = try keychain.retrieve(account: Self.credentialsAccount) else {
-                // Even with no claude.ai credentials, a platform key may exist independently.
-                platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
-                return
-            }
-            let parts = stored.split(separator: Self.credentialsSeparator, maxSplits: 1)
-            guard parts.count == 2 else { return }
-            sessionKey = String(parts[0])
-            orgId = String(parts[1])
+            credentials = try OAuthService.load(from: keychain)
             platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
         } catch {
             // A real Keychain failure (e.g. macOS denies access because the app's
@@ -127,180 +85,75 @@ public final class AppState {
         }
     }
 
-    public func saveCredentials(sessionKey: String, orgId: String) throws {
-        let combined = "\(sessionKey)\(Self.credentialsSeparator)\(orgId)"
-        try keychain.save(account: Self.credentialsAccount, value: combined)
-        self.sessionKey = sessionKey
-        self.orgId = orgId
+    public func saveCredentials(_ credentials: OAuthCredentials) throws {
+        try OAuthService.save(credentials, to: keychain)
+        self.credentials = credentials
     }
 
     public func signOut() {
-        try? keychain.delete(account: Self.credentialsAccount)
+        OAuthService.clear(from: keychain)
+        try? keychain.delete(account: Self.legacyCredentialsAccount)
         try? keychain.delete(account: Self.platformCredentialsAccount)
-        sessionKey = nil
-        orgId = nil
+        stopPolling()
+        credentials = nil
         usage = nil
         organizationDetails = nil
-        organizations = []
-        pendingSessionKey = nil
-        pendingOrganizations = []
-        pendingOrgPick = false
+        error = nil
         platformSessionKey = nil
         platformCredits = nil
         platformCreditsIsStale = false
         cachedPlatformOrgId = nil
     }
 
-    /// Non-destructive recovery: wipes sessionKey + usage but preserves
-    /// orgId and cached organizations so the reconnect screen can name the org.
+    /// Non-destructive recovery: drops the token set but preserves
+    /// `organizationDetails` so the re-login screen can name the account.
     func handleSessionExpired() {
-        try? keychain.delete(account: Self.credentialsAccount)
-        sessionKey = nil
+        OAuthService.clear(from: keychain)
+        credentials = nil
         usage = nil
-        organizationDetails = nil
         error = .sessionExpired
-        // orgId and organizations: preserved
+        // organizationDetails: preserved
     }
 
     // MARK: - API Calls
 
-    public func validateAndFetchOrgs(sessionKey: String) async {
+    /// Opens the browser for consent and stores the resulting token set.
+    public func signIn() async {
         isLoading = true
         error = nil
-        self.sessionKey = sessionKey
         do {
-            organizations = try await ClaudeAPIClient.fetchOrganizations(sessionKey: sessionKey)
-            NSLog("ClaudeBar: fetchOrganizations returned %d org(s), %d selectable",
-                  organizations.count, selectableOrganizations.count)
-            if organizations.isEmpty {
-                // Valid session but the account exposes no organizations — surface
-                // it instead of silently sitting on the input screen.
-                error = .noOrganizations
-                self.sessionKey = nil
-            } else if selectableOrganizations.count == 1 {
-                // Exactly one connectable org (either the only org, or the single
-                // paid one among several) — connect it without a picker.
-                try saveCredentials(sessionKey: sessionKey, orgId: selectableOrganizations[0].uuid)
-                startPolling()
-            }
-            // Otherwise multiple selectable orgs — SessionKeyInputView shows the picker.
-        } catch let apiError as APIError {
-            error = .api(apiError)
-            self.sessionKey = nil
-        } catch {
-            self.error = .network(error.localizedDescription)
-            self.sessionKey = nil
-        }
-        isLoading = false
-    }
-
-    /// Switch to a different organization while keeping the current sessionKey.
-    /// Clears stale usage/tier data (tier may differ between orgs) and triggers
-    /// a fresh fetch via startPolling().
-    public func switchOrganization(to org: Organization) async {
-        guard let sessionKey else { return }
-        do {
-            try saveCredentials(sessionKey: sessionKey, orgId: org.uuid)
-            usage = nil
-            organizationDetails = nil
-            error = nil
+            try saveCredentials(try await OAuthService.signIn())
             startPolling()
-        } catch {
-            self.error = .network(error.localizedDescription)
-        }
-    }
-
-    /// Validate a new session key by fetching the org list, then either
-    /// preserve the current orgId (if still in the list) or enter a pending
-    /// pick state that holds the new key transiently until the user confirms.
-    public func updateSessionKey(_ newKey: String) async {
-        isLoading = true
-        error = nil
-        do {
-            let fetched = try await ClaudeAPIClient.fetchOrganizations(sessionKey: newKey)
-            applyKeyUpdateResult(newSessionKey: newKey, fetchedOrgs: fetched)
-        } catch let apiError as APIError {
-            error = .api(apiError)
+        } catch let oauthError as OAuthError {
+            error = .oauth(oauthError)
         } catch {
             self.error = .network(error.localizedDescription)
         }
         isLoading = false
-    }
-
-    /// Pure state-machine step extracted from updateSessionKey for testability.
-    /// Decides between "preserve current org" and "enter pending pick".
-    func applyKeyUpdateResult(newSessionKey: String, fetchedOrgs: [Organization]) {
-        if let currentOrgId = orgId, fetchedOrgs.contains(where: { $0.uuid == currentOrgId }) {
-            // Common case: cookie rotated, account/org unchanged
-            do {
-                try saveCredentials(sessionKey: newSessionKey, orgId: currentOrgId)
-                organizations = fetchedOrgs
-                pendingOrgPick = false
-                pendingSessionKey = nil
-                pendingOrganizations = []
-                startPolling()
-            } catch {
-                self.error = .network(error.localizedDescription)
-            }
-        } else {
-            // Different account: hold new key transiently, wait for user pick
-            stopPolling()
-            pendingSessionKey = newSessionKey
-            pendingOrganizations = fetchedOrgs
-            pendingOrgPick = true
-        }
-    }
-
-    /// Commit the held sessionKey + the picked org atomically, then resume polling.
-    public func confirmPendingOrg(_ org: Organization) async {
-        guard let pending = pendingSessionKey else { return }
-        do {
-            try saveCredentials(sessionKey: pending, orgId: org.uuid)
-            organizations = pendingOrganizations
-            usage = nil
-            organizationDetails = nil
-            pendingSessionKey = nil
-            pendingOrganizations = []
-            pendingOrgPick = false
-            startPolling()
-        } catch {
-            self.error = .network(error.localizedDescription)
-        }
-    }
-
-    /// Discard pending key/org state. Old credentials are untouched.
-    public func cancelPendingOrgPick() {
-        pendingSessionKey = nil
-        pendingOrganizations = []
-        pendingOrgPick = false
-        if isAuthenticated {
-            startPolling()
-        }
     }
 
     public func refreshUsage() async {
-        guard let sessionKey, let orgId else { return }
+        guard var creds = credentials else { return }
         isLoading = true
         error = nil
-        let client = ClaudeAPIClient(sessionKey: sessionKey, orgId: orgId)
         do {
-            usage = try await client.fetchUsage()
-            lastUpdated = Date()
-            // Fetch org details once per session — tier is stable across polls.
-            if organizationDetails == nil {
-                organizationDetails = try? await client.fetchOrganizationDetails()
+            if OAuthService.needsRefresh(creds) {
+                creds = try await OAuthService.refresh(creds)
+                try saveCredentials(creds)
             }
-            // Best-effort background refresh of the org list. Capture the
-            // sessionKey at spawn; on completion, only apply if the user is
-            // still signed in with that same key — avoids leaking the prior
-            // account's orgs after sign-out or account switch.
-            Task { [weak self, sessionKey] in
-                if let fetched = try? await ClaudeAPIClient.fetchOrganizations(sessionKey: sessionKey) {
-                    await MainActor.run {
-                        guard let self, self.sessionKey == sessionKey else { return }
-                        self.applyRefreshedOrgList(fetched)
-                    }
-                }
+            do {
+                usage = try await ClaudeAPIClient.fetchOAuthUsage(accessToken: creds.accessToken)
+            } catch APIError.sessionExpired {
+                // The token died early (revoked, or clock skew). Refresh once,
+                // retry once; a second failure falls through to the re-login state.
+                creds = try await OAuthService.refresh(creds)
+                try saveCredentials(creds)
+                usage = try await ClaudeAPIClient.fetchOAuthUsage(accessToken: creds.accessToken)
+            }
+            lastUpdated = Date()
+            // Fetch the profile once per session — org name and tier are stable.
+            if organizationDetails == nil {
+                organizationDetails = try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken)
             }
             // Platform credits — no-ops when no platform key is connected.
             Task { @MainActor [weak self] in
@@ -308,19 +161,15 @@ public final class AppState {
             }
         } catch APIError.sessionExpired {
             handleSessionExpired()
+        } catch is OAuthError {
+            // Refresh itself failed — the refresh token is revoked or expired.
+            handleSessionExpired()
         } catch APIError.rateLimited {
             error = .rateLimited
         } catch {
             self.error = .network(error.localizedDescription)
         }
         isLoading = false
-    }
-
-    /// Replace the cached org list with a fresh server response.
-    /// Empty responses are ignored to avoid wiping the cache on a transient blip.
-    public func applyRefreshedOrgList(_ fetched: [Organization]) {
-        guard !fetched.isEmpty else { return }
-        organizations = fetched
     }
 
     // MARK: - Platform Credits
@@ -439,9 +288,9 @@ public final class AppState {
 
 public enum AppError: Equatable {
     case api(APIError)
+    case oauth(OAuthError)
     case sessionExpired
     case rateLimited
-    case noOrganizations
     case network(String)
     case keychainLocked
 
@@ -449,8 +298,8 @@ public enum AppError: Equatable {
         switch self {
         case .sessionExpired: return String(localized: "error.sessionExpired", bundle: .module)
         case .rateLimited: return String(localized: "error.rateLimited", bundle: .module)
-        case .noOrganizations: return String(localized: "error.noOrganizations", bundle: .module)
         case .api(let e): return String(localized: "error.api \(e.displayMessage)", bundle: .module)
+        case .oauth(let e): return e.displayMessage
         case .network(let msg): return msg
         case .keychainLocked: return String(localized: "error.keychainLocked", bundle: .module)
         }

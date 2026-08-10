@@ -11,14 +11,12 @@ public struct PopoverView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            if state.showingSettings || state.pendingOrgPick {
-                // Pending-pick state lives in SettingsView; auto-route there
-                // so the user can resolve it from any source view.
+            if state.showingSettings {
                 SettingsView(state: state, updater: updater)
-            } else if state.error == .sessionExpired, state.orgId != nil {
+            } else if state.error == .sessionExpired {
                 // Session-expired routing must precede !isAuthenticated:
-                // handleSessionExpired nils sessionKey, so isAuthenticated is false,
-                // but the cached orgId lets us show the personalized reconnect view.
+                // handleSessionExpired nils the credentials, so isAuthenticated is
+                // false, but the cached profile lets us name the account.
                 SessionExpiredView(state: state)
             } else if state.error == .keychainLocked {
                 // Same ordering reason as sessionExpired above: a Keychain
@@ -43,8 +41,11 @@ public struct PopoverView: View {
 private extension AppState {
     static var previewWithUsage: AppState {
         let state = AppState(keychain: KeychainService(serviceName: "com.claudebar.preview"))
-        state.sessionKey = "fake-key"
-        state.orgId = "fake-org"
+        state.credentials = OAuthCredentials(
+            accessToken: "fake-token",
+            refreshToken: "fake-refresh",
+            expiresAt: Date().addingTimeInterval(3600)
+        )
         state.usage = UsageResponse(
             fiveHour: WindowUsage(utilization: 0.42, resetsAt: Date().addingTimeInterval(3600 * 2)),
             sevenDay: WindowUsage(utilization: 0.65, resetsAt: Date().addingTimeInterval(86400 * 3)),
@@ -63,8 +64,6 @@ private extension AppState {
     static var previewSessionExpired: AppState {
         let state = AppState(keychain: KeychainService(serviceName: "com.claudebar.preview"))
         state.error = .sessionExpired
-        state.sessionKey = "fake-key"
-        state.orgId = "fake-org"
         return state
     }
 }
@@ -79,17 +78,4 @@ private extension AppState {
 
 #Preview("Session Expired") {
     PopoverView(state: .previewSessionExpired)
-}
-
-#Preview("Session Key Input") {
-    SessionKeyInputView(
-        state: .previewNotAuthenticated,
-        title: "Custom Title",
-        subtitle: "Custom subtitle with **markdown** support",
-        buttonLabel: "Submit",
-        titleIcon: "key.fill",
-        titleColor: .blue,
-        showQuitButton: true
-    )
-    .frame(width: 320)
 }

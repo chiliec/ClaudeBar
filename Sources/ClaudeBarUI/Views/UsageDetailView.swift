@@ -77,41 +77,7 @@ struct UsageDetailView: View {
 
     @ViewBuilder
     private var headerTitle: some View {
-        let currentOrgName = state.orgId.flatMap { id in
-            state.organizations.first(where: { $0.uuid == id })?.displayName
-        }
-        if state.visibleOrganizations.count > 1, let name = currentOrgName {
-            Menu {
-                ForEach(state.visibleOrganizations.filter { $0.uuid != state.orgId }, id: \.uuid) { org in
-                    Button {
-                        Task { await state.switchOrganization(to: org) }
-                    } label: {
-                        Text(org.displayName)
-                    }
-                }
-                Divider()
-                Button {
-                    state.showingSettings = true
-                } label: {
-                    Text("header.updateSessionKey", bundle: .module)
-                }
-                Button {
-                    state.showingSettings = true
-                } label: {
-                    Text("header.openSettings", bundle: .module)
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(name)
-                        .font(.headline)
-                    Image(systemName: "chevron.down")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-        } else if let name = currentOrgName {
+        if let name = state.organizationDetails?.name {
             Text(name).font(.headline)
         } else {
             Text("usage.title", bundle: .module).font(.headline)
