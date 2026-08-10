@@ -73,3 +73,60 @@ struct OAuthCallbackParsingTests {
         #expect(OAuthCallbackServer.parseCallback(requestHead: "hello") == nil)
     }
 }
+
+@Suite
+struct OAuthTokenTests {
+    @Test func parsesTokenResponse() throws {
+        let json = """
+        {
+          "access_token": "sk-at-123",
+          "refresh_token": "sk-rt-456",
+          "expires_in": 3600,
+          "token_type": "Bearer"
+        }
+        """.data(using: .utf8)!
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let creds = try OAuthService.parseTokenResponse(data: json, now: now)
+
+        #expect(creds.accessToken == "sk-at-123")
+        #expect(creds.refreshToken == "sk-rt-456")
+        #expect(abs(creds.expiresAt.timeIntervalSince(now) - 3600) < 1)
+    }
+
+    @Test func keepsPreviousRefreshTokenWhenServerOmitsIt() throws {
+        let json = """
+        { "access_token": "sk-at-new", "expires_in": 3600 }
+        """.data(using: .utf8)!
+        let creds = try OAuthService.parseTokenResponse(data: json, previousRefreshToken: "sk-rt-old")
+
+        #expect(creds.accessToken == "sk-at-new")
+        #expect(creds.refreshToken == "sk-rt-old")
+    }
+
+    @Test func needsRefreshInsideFiveMinuteWindow() {
+        let now = Date()
+        let expiring = OAuthCredentials(accessToken: "a", refreshToken: "r", expiresAt: now.addingTimeInterval(120))
+        let fresh = OAuthCredentials(accessToken: "a", refreshToken: "r", expiresAt: now.addingTimeInterval(3600))
+        let expired = OAuthCredentials(accessToken: "a", refreshToken: "r", expiresAt: now.addingTimeInterval(-60))
+
+        #expect(OAuthService.needsRefresh(expiring, now: now))
+        #expect(!OAuthService.needsRefresh(fresh, now: now))
+        #expect(OAuthService.needsRefresh(expired, now: now))
+    }
+
+    @Test func roundTripsThroughKeychain() throws {
+        let keychain = KeychainService(serviceName: "com.claudebar.test")
+        OAuthService.clear(from: keychain)
+        let creds = OAuthCredentials(
+            accessToken: "sk-at-123",
+            refreshToken: "sk-rt-456",
+            expiresAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        try OAuthService.save(creds, to: keychain)
+
+        #expect(try OAuthService.load(from: keychain) == creds)
+
+        OAuthService.clear(from: keychain)
+        #expect(try OAuthService.load(from: keychain) == nil)
+    }
+}
