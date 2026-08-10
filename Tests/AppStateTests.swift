@@ -282,6 +282,60 @@ struct AppStateTests {
         #expect(state.platformSessionKey == "sk-platform-restored")
     }
 
+    // MARK: - Multi-Account Switching
+
+    private func account(_ id: String, _ label: String) -> Account {
+        Account(id: id, label: label, credentials: testCredentials())
+    }
+
+    @Test func switchToChangesActiveAndClearsUsage() throws {
+        let state = makeState()
+        state.accounts = [account("u1", "a@x.com"), account("u2", "b@x.com")]
+        state.activeID = "u1"
+        state.usage = UsageResponse(fiveHour: nil,
+                                    sevenDay: WindowUsage(utilization: 0.5, resetsAt: nil))
+        state.switchTo(id: "u2")
+        #expect(state.activeID == "u2")
+        #expect(state.credentials == state.accounts.first { $0.id == "u2" }?.credentials)
+        #expect(state.usage == nil)                 // cleared; fresh fetch will refill
+        state.signOut()
+    }
+
+    @Test func removeActiveReactivatesAnother() throws {
+        let state = makeState()
+        state.accounts = [account("u1", "a@x.com"), account("u2", "b@x.com")]
+        state.activeID = "u1"
+        state.removeAccount(id: "u1")
+        #expect(state.accounts.map(\.id) == ["u2"])
+        #expect(state.activeID == "u2")
+        #expect(state.credentials != nil)
+        state.signOut()
+    }
+
+    @Test func removeLastAccountLeavesUnauthenticated() throws {
+        let state = makeState()
+        state.accounts = [account("u1", "a@x.com")]
+        state.activeID = "u1"
+        state.removeAccount(id: "u1")
+        #expect(state.accounts.isEmpty)
+        #expect(state.activeID == nil)
+        #expect(!state.isAuthenticated)
+        state.signOut()
+    }
+
+    @Test func reconcileIdentityRekeysMigratedAccount() throws {
+        let state = makeState()
+        state.accounts = [Account(id: AccountStore.legacyDefaultID, label: "",
+                                  credentials: testCredentials())]
+        state.activeID = AccountStore.legacyDefaultID
+        state.reconcileActiveIdentity(
+            AccountIdentity(uuid: "real-uuid", email: "real@x.com"))
+        #expect(state.activeID == "real-uuid")
+        #expect(state.accounts.first?.id == "real-uuid")
+        #expect(state.accounts.first?.label == "real@x.com")
+        state.signOut()
+    }
+
     private struct FakeKeychain: KeychainServicing {
         var throwingAccounts: Set<String> = []
         var values: [String: String] = [:]

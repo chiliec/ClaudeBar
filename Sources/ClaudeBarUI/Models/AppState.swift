@@ -116,6 +116,56 @@ public final class AppState {
         }
     }
 
+    // MARK: - Account switching
+
+    public func switchTo(id: String) {
+        guard id != activeID, accounts.contains(where: { $0.id == id }) else { return }
+        activeID = id
+        credentials = activeAccount?.credentials
+        usage = nil
+        organizationDetails = nil
+        lastUpdated = nil
+        error = nil
+        try? persistAccounts()
+        startPolling()      // fetches the newly active account immediately
+    }
+
+    public func removeAccount(id: String) {
+        accounts.removeAll { $0.id == id }
+        if activeID == id {
+            activeID = accounts.first?.id
+            credentials = activeAccount?.credentials
+            usage = nil
+            organizationDetails = nil
+            lastUpdated = nil
+        }
+        try? persistAccounts()
+        if activeID == nil { stopPolling() } else { startPolling() }
+    }
+
+    /// After the first profile fetch, replace a migrated/default account's
+    /// placeholder id+label with the real `account.uuid`/`email`. Idempotent:
+    /// no-op once the active account already carries its real identity.
+    func reconcileActiveIdentity(_ identity: AccountIdentity) {
+        guard let i = accounts.firstIndex(where: { $0.id == activeID }) else { return }
+        var acct = accounts[i]
+        let needsRekey = acct.id != identity.uuid
+        acct.label = identity.email
+        if needsRekey {
+            // Drop any pre-existing entry for this real uuid (dedup), then rekey.
+            accounts.removeAll { $0.id == identity.uuid }
+            acct = Account(id: identity.uuid, label: identity.email, credentials: acct.credentials)
+        }
+        // Re-find the index (dedup removal may have shifted it) and write back.
+        if let j = accounts.firstIndex(where: { $0.id == (needsRekey ? activeID : identity.uuid) }) {
+            accounts[j] = acct
+        } else {
+            accounts.append(acct)
+        }
+        activeID = identity.uuid
+        try? persistAccounts()
+    }
+
     public func signOut() {
         AccountStore.clear(from: keychain)
         OAuthService.clear(from: keychain)
@@ -151,12 +201,24 @@ public final class AppState {
 
     // MARK: - API Calls
 
-    /// Opens the browser for consent and stores the resulting token set.
+    /// Opens the browser for consent, identifies the account via its profile,
+    /// and adds it to the set as the new active account.
     public func signIn() async {
         isLoading = true
         error = nil
         do {
-            try saveCredentials(try await OAuthService.signIn())
+            let tokens = try await OAuthService.signIn()
+            let profile = try await ClaudeAPIClient.fetchOAuthProfile(accessToken: tokens.accessToken)
+            let account = Account(id: profile.account.uuid,
+                                  label: profile.account.email,
+                                  credentials: tokens)
+            upsert(account)
+            activeID = account.id
+            credentials = tokens
+            organizationDetails = profile.organization
+            usage = nil
+            lastUpdated = nil
+            try persistAccounts()
             startPolling()
         } catch let oauthError as OAuthError {
             error = .oauth(oauthError)
@@ -185,7 +247,10 @@ public final class AppState {
             lastUpdated = Date()
             // Fetch the profile once per session — org name and tier are stable.
             if organizationDetails == nil {
-                organizationDetails = (try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken))?.organization
+                if let profile = try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken) {
+                    organizationDetails = profile.organization
+                    reconcileActiveIdentity(profile.account)
+                }
             }
             // Platform credits — no-ops when no platform key is connected.
             Task { @MainActor [weak self] in
