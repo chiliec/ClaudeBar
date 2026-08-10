@@ -21,7 +21,7 @@ Three-layer: Views → `AppState` (`@Observable` class) → Services
 - Date parsing: custom decoder handles ISO 8601 with/without fractional seconds (`.000Z` vs `Z`)
 
 ## SPM structure
-Two targets: `ClaudeBarUI` (library: all models/services/views) + `ClaudeBar` (thin `@main` executable). This split enables SwiftUI `#Preview` — previews don't work in executable targets. All `ClaudeBarUI` types are `public`.
+Two targets: `ClaudeBarUI` (library: all models/services/views) + `ClaudeBar` (thin `@main` executable). This split enables SwiftUI `#Preview` — previews don't work in executable targets. `ClaudeBarUI` types are `public` so previews and the executable target can reach them; implementation-only helpers with no callers outside the module (e.g. `OAuthCallbackServer`) stay internal.
 
 ## Testing
 - `makeState()` — injects test keychain (`com.claudebar.test`), clears before each test

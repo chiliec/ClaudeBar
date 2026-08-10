@@ -138,16 +138,14 @@ public final class AppState {
         error = nil
         do {
             if OAuthService.needsRefresh(creds) {
-                creds = try await OAuthService.refresh(creds)
-                try saveCredentials(creds)
+                creds = try await refreshAndSave(creds)
             }
             do {
                 usage = try await ClaudeAPIClient.fetchOAuthUsage(accessToken: creds.accessToken)
             } catch APIError.sessionExpired {
                 // The token died early (revoked, or clock skew). Refresh once,
                 // retry once; a second failure falls through to the re-login state.
-                creds = try await OAuthService.refresh(creds)
-                try saveCredentials(creds)
+                creds = try await refreshAndSave(creds)
                 usage = try await ClaudeAPIClient.fetchOAuthUsage(accessToken: creds.accessToken)
             }
             lastUpdated = Date()
@@ -172,6 +170,12 @@ public final class AppState {
         isLoading = false
     }
 
+    private func refreshAndSave(_ creds: OAuthCredentials) async throws -> OAuthCredentials {
+        let refreshed = try await OAuthService.refresh(creds)
+        try saveCredentials(refreshed)
+        return refreshed
+    }
+
     // MARK: - Platform Credits
 
     /// Apply a successful platform credits fetch — value is updated, stale flag clears.
@@ -190,7 +194,7 @@ public final class AppState {
     }
 
     /// 401/403 from a platform endpoint — clear ONLY the platform side. The
-    /// claude.ai sessionKey, orgId, usage display, and global error state are
+    /// claude.ai OAuth credentials, usage display, and global error state are
     /// untouched. Settings shows "Disconnected · session expired" via the absence
     /// of `platformSessionKey`.
     func applyPlatformSessionExpired() {

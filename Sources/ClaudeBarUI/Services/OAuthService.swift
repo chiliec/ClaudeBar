@@ -59,8 +59,10 @@ private final class PortBox: @unchecked Sendable {
 }
 
 public enum OAuthService {
-    /// Claude Code's public client ID. No third-party OAuth registration exists
-    /// for claude.ai; see the spec's risk section.
+    /// Claude Code's public client ID — no third-party OAuth registration
+    /// exists for claude.ai, so this app authenticates as Claude Code. If
+    /// Anthropic ever revokes or scopes it down, sign-in breaks visibly at
+    /// the consent page.
     public static let clientID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
     /// Matches Claude Code CLI's own loopback server, which binds an
     /// OS-assigned ephemeral port (`.listen(0, "127.0.0.1")`) rather than a

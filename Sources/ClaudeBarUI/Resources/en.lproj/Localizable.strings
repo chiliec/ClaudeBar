@@ -17,7 +17,7 @@
 "error.api %@" = "API error: %@";
 "error.keychainLocked" = "Keychain access denied — re-enter your key";
 "error.rateLimited" = "Rate limited — will retry";
-"error.sessionExpired" = "Session expired — update your key";
+"error.sessionExpired" = "Session expired — sign in again";
 "keychain.locked" = "Keychain Access Denied";
 "keychain.lockedSubtitle" = "macOS blocked access to your saved session, usually after an app update changes its signing certificate. Sign in again to fix it.";
 "section.apiCredits" = "API Credits";

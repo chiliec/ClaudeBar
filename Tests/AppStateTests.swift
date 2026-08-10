@@ -147,7 +147,7 @@ struct AppStateTests {
     // MARK: - Error Messages
 
     @Test func appErrorMessages() {
-        #expect(AppError.sessionExpired.message == "Session expired — update your key")
+        #expect(AppError.sessionExpired.message == "Session expired — sign in again")
         #expect(AppError.rateLimited.message == "Rate limited — will retry")
         #expect(AppError.network("Connection failed").message == "Connection failed")
         #expect(AppError.api(.httpError(500)).message == "API error: HTTP 500")

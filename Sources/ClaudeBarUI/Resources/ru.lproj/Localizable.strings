@@ -17,7 +17,7 @@
 "error.api %@" = "Ошибка API: %@";
 "error.keychainLocked" = "Доступ к Keychain запрещён — введите ключ заново";
 "error.rateLimited" = "Превышен лимит запросов — повтор позже";
-"error.sessionExpired" = "Сессия истекла — обновите ключ";
+"error.sessionExpired" = "Сессия истекла — войдите снова";
 "keychain.locked" = "Доступ к Keychain запрещён";
 "keychain.lockedSubtitle" = "macOS заблокировала доступ к сохранённой сессии — обычно это происходит после обновления приложения с новым сертификатом подписи. Войдите снова.";
 "section.apiCredits" = "API кредиты";
