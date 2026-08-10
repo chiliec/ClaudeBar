@@ -130,4 +130,80 @@ struct ClaudeAPIClientTests {
         let credits = try ClaudeAPIClient.parsePlatformCreditsResponse(data: json)
         #expect(credits == nil)
     }
+
+    @Test func buildOAuthUsageRequest() throws {
+        let request = try ClaudeAPIClient.buildOAuthRequest(path: "/api/oauth/usage", accessToken: "sk-at-123")
+
+        #expect(request.url?.absoluteString == "https://api.anthropic.com/api/oauth/usage")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer sk-at-123")
+        #expect(request.value(forHTTPHeaderField: "anthropic-beta") == "oauth-2025-04-20")
+        #expect(request.value(forHTTPHeaderField: "Cookie") == nil)
+        #expect(request.httpMethod == "GET")
+    }
+
+    @Test func parseOAuthProfileResponse() throws {
+        let json = """
+        {
+          "account": { "uuid": "acct-1", "email": "user@example.com", "has_claude_max": true },
+          "organization": {
+            "uuid": "org-1",
+            "name": "Personal",
+            "organization_type": "claude_personal",
+            "rate_limit_tier": "default_claude_max_5x",
+            "seat_tier": null,
+            "subscription_status": "active"
+          },
+          "enabled_plugins": []
+        }
+        """.data(using: .utf8)!
+
+        let details = try ClaudeAPIClient.parseProfileResponse(data: json)
+        #expect(details.uuid == "org-1")
+        #expect(details.name == "Personal")
+        #expect(details.tier == .max5x)
+    }
+
+    /// Real payload captured from /api/oauth/usage on 2026-08-10 — the schema
+    /// the app must keep parsing, including 6-digit fractional seconds with a
+    /// +00:00 offset and the model-scoped weekly limit.
+    @Test func parseUsageResponseFromOAuthEndpoint() throws {
+        let json = """
+        {
+          "five_hour": { "utilization": 66.0, "resets_at": "2026-08-10T10:39:59.049791+00:00",
+                         "limit_dollars": null, "used_dollars": null, "remaining_dollars": null },
+          "seven_day": { "utilization": 51.0, "resets_at": "2026-08-13T03:59:59.049824+00:00",
+                         "limit_dollars": null, "used_dollars": null, "remaining_dollars": null },
+          "seven_day_opus": null,
+          "seven_day_sonnet": null,
+          "nimbus_quill": { "utilization": 0.0, "resets_at": null,
+                            "limit_dollars": null, "used_dollars": null, "remaining_dollars": null },
+          "cinder_cove": null,
+          "extra_usage": { "is_enabled": false, "monthly_limit": null, "used_credits": null,
+                           "utilization": null, "user_disabled": false },
+          "limits": [
+            { "kind": "session", "group": "session", "percent": 66, "severity": "normal",
+              "resets_at": "2026-08-10T10:39:59.049791+00:00", "scope": null, "is_active": true },
+            { "kind": "weekly_all", "group": "weekly", "percent": 51, "severity": "normal",
+              "resets_at": "2026-08-13T03:59:59.049824+00:00", "scope": null, "is_active": false },
+            { "kind": "weekly_scoped", "group": "weekly", "percent": 53, "severity": "normal",
+              "resets_at": "2026-08-13T04:00:00.050030+00:00",
+              "scope": { "model": { "id": null, "display_name": "Fable" }, "surface": null },
+              "is_active": false }
+          ],
+          "spend": { "used": { "amount_minor": 0, "currency": "USD", "exponent": 2 },
+                     "percent": 0, "severity": "normal", "enabled": false },
+          "member_dashboard_available": false
+        }
+        """.data(using: .utf8)!
+
+        let usage = try ClaudeAPIClient.parseUsageResponse(data: json)
+        #expect(abs(usage.fiveHour!.utilization - 0.66) < 0.0001)
+        #expect(abs(usage.sevenDay.utilization - 0.51) < 0.0001)
+        #expect(usage.fiveHour?.resetsAt != nil)
+        // The model-scoped weekly limit becomes a per-model window labelled "Fable".
+        let fable = usage.additionalWindows.first { $0.key == "sevenDayFable" }
+        #expect(fable != nil)
+        #expect(abs((fable?.utilization ?? 0) - 0.53) < 0.0001)
+        #expect(usage.isMaxTier == false)
+    }
 }

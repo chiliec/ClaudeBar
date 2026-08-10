@@ -145,6 +145,59 @@ extension ISO8601DateFormatter {
     }()
 }
 
+// MARK: - OAuth data endpoints (api.anthropic.com)
+
+extension ClaudeAPIClient {
+    private static let oauthBaseURL = "https://api.anthropic.com"
+    private static let oauthBetaHeader = "oauth-2025-04-20"
+
+    public static func buildOAuthRequest(path: String, accessToken: String) throws -> URLRequest {
+        guard let url = URL(string: "\(oauthBaseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(oauthBetaHeader, forHTTPHeaderField: "anthropic-beta")
+        return request
+    }
+
+    /// Maps `/api/oauth/profile` onto the existing `OrganizationDetails` so the
+    /// tier pill and header name keep working unchanged.
+    public static func parseProfileResponse(data: Data) throws -> OrganizationDetails {
+        struct Envelope: Decodable {
+            struct Org: Decodable {
+                let uuid: String
+                let name: String
+                let rateLimitTier: String?
+            }
+            let organization: Org
+        }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let envelope = try decoder.decode(Envelope.self, from: data)
+        return OrganizationDetails(
+            uuid: envelope.organization.uuid,
+            name: envelope.organization.name,
+            rateLimitTier: envelope.organization.rateLimitTier
+        )
+    }
+
+    public static func fetchOAuthUsage(accessToken: String) async throws -> UsageResponse {
+        let request = try buildOAuthRequest(path: "/api/oauth/usage", accessToken: accessToken)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateHTTPResponse(response)
+        return try parseUsageResponse(data: data)
+    }
+
+    public static func fetchOAuthProfile(accessToken: String) async throws -> OrganizationDetails {
+        let request = try buildOAuthRequest(path: "/api/oauth/profile", accessToken: accessToken)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateHTTPResponse(response)
+        return try parseProfileResponse(data: data)
+    }
+}
+
 // MARK: - platform.claude.com (prepaid API credits)
 
 public enum PlatformAuthError: Error, Equatable {
