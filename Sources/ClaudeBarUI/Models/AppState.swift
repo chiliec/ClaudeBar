@@ -138,6 +138,7 @@ public final class AppState {
             usage = nil
             organizationDetails = nil
             lastUpdated = nil
+            error = nil
         }
         try? persistAccounts()
         if activeID == nil { stopPolling() } else { startPolling() }

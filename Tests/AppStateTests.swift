@@ -305,10 +305,12 @@ struct AppStateTests {
         let state = makeState()
         state.accounts = [account("u1", "a@x.com"), account("u2", "b@x.com")]
         state.activeID = "u1"
+        state.error = .sessionExpired
         state.removeAccount(id: "u1")
         #expect(state.accounts.map(\.id) == ["u2"])
         #expect(state.activeID == "u2")
         #expect(state.credentials != nil)
+        #expect(state.error == nil)
         state.signOut()
     }
 
