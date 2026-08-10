@@ -36,3 +36,40 @@ struct OAuthServiceTests {
         #expect(params["scope"] == OAuthService.scope)
     }
 }
+
+@Suite
+struct OAuthCallbackParsingTests {
+    @Test func extractsCodeAndState() {
+        let head = "GET /callback?code=abc123&state=xyz HTTP/1.1\r\nHost: localhost:54545\r\n\r\n"
+        let params = OAuthCallbackServer.parseCallback(requestHead: head)
+        #expect(params?["code"] == "abc123")
+        #expect(params?["state"] == "xyz")
+    }
+
+    @Test func percentDecodesValues() {
+        let head = "GET /callback?code=a%2Fb%2Bc&state=s%20t HTTP/1.1\r\n\r\n"
+        let params = OAuthCallbackServer.parseCallback(requestHead: head)
+        #expect(params?["code"] == "a/b+c")
+        #expect(params?["state"] == "s t")
+    }
+
+    @Test func surfacesDenialParameters() {
+        let head = "GET /callback?error=access_denied&state=xyz HTTP/1.1\r\n\r\n"
+        let params = OAuthCallbackServer.parseCallback(requestHead: head)
+        #expect(params?["error"] == "access_denied")
+        #expect(params?["code"] == nil)
+    }
+
+    @Test func ignoresOtherPaths() {
+        #expect(OAuthCallbackServer.parseCallback(requestHead: "GET /favicon.ico HTTP/1.1\r\n\r\n") == nil)
+    }
+
+    @Test func ignoresNonGETMethods() {
+        #expect(OAuthCallbackServer.parseCallback(requestHead: "POST /callback?code=a HTTP/1.1\r\n\r\n") == nil)
+    }
+
+    @Test func ignoresGarbage() {
+        #expect(OAuthCallbackServer.parseCallback(requestHead: "") == nil)
+        #expect(OAuthCallbackServer.parseCallback(requestHead: "hello") == nil)
+    }
+}
