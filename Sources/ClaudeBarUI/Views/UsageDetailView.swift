@@ -77,11 +77,39 @@ struct UsageDetailView: View {
 
     @ViewBuilder
     private var headerTitle: some View {
-        if let name = state.organizationDetails?.name {
-            Text(name).font(.headline)
-        } else {
-            Text("usage.title", bundle: .module).font(.headline)
+        let title = state.organizationDetails?.name
+            ?? state.accounts.first { $0.id == state.activeID }?.label
+        Menu {
+            ForEach(state.accounts) { account in
+                Button {
+                    state.switchTo(id: account.id)
+                } label: {
+                    if account.id == state.activeID {
+                        Label(account.label, systemImage: "checkmark")
+                    } else {
+                        Text(account.label)
+                    }
+                }
+            }
+            if !state.accounts.isEmpty { Divider() }
+            Button {
+                Task { await state.signIn() }
+            } label: {
+                Text("action.addAccount", bundle: .module)
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(title ?? String(localized: "usage.title", bundle: .module))
+                    .font(.headline)
+                if state.accounts.count > 1 {
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
     }
 
     private func fiveHourSection(_ usage: UsageResponse) -> some View {

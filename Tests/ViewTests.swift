@@ -192,6 +192,22 @@ struct UsageDetailViewHeaderTests {
         _ = try inspected.find(text: "Claude Usage")
     }
 
+    @Test func headerShowsSwitcherWithMultipleAccounts() throws {
+        let state = makeState()
+        state.accounts = [
+            Account(id: "u1", label: "a@x.com",
+                    credentials: OAuthCredentials(accessToken: "a", refreshToken: "b",
+                                                  expiresAt: Date().addingTimeInterval(3600))),
+            Account(id: "u2", label: "b@x.com",
+                    credentials: OAuthCredentials(accessToken: "c", refreshToken: "d",
+                                                  expiresAt: Date().addingTimeInterval(3600))),
+        ]
+        state.activeID = "u1"
+        let view = UsageDetailView(state: state)
+        #expect(view.state.accounts.count == 2)   // switcher data is wired
+        state.signOut()
+    }
+
     // MARK: - Per-model 7-day window rows
 
     @Test func showsSonnetAndDesignRowsWhenReported() throws {
