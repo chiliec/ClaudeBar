@@ -6,6 +6,8 @@ public final class AppState {
     // MARK: - Auth State
     public var credentials: OAuthCredentials?
     public var isAuthenticated: Bool { credentials != nil }
+    public var accounts: [Account] = []
+    public var activeID: String?
 
     // MARK: - Usage State
     public var usage: UsageResponse?
@@ -73,7 +75,10 @@ public final class AppState {
         // One-time migration: the pasted claude.ai sessionKey is dead weight now.
         try? keychain.delete(account: Self.legacyCredentialsAccount)
         do {
-            credentials = try OAuthService.load(from: keychain)
+            let set = try AccountStore.load(from: keychain)
+            accounts = set.accounts
+            activeID = set.activeID
+            credentials = activeAccount?.credentials
             platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
         } catch {
             // A real Keychain failure (e.g. macOS denies access because the app's
@@ -85,16 +90,40 @@ public final class AppState {
         }
     }
 
+    private var activeAccount: Account? {
+        accounts.first { $0.id == activeID }
+    }
+
+    private func persistAccounts() throws {
+        try AccountStore.save(AccountSet(accounts: accounts, activeID: activeID), to: keychain)
+    }
+
     public func saveCredentials(_ credentials: OAuthCredentials) throws {
-        try OAuthService.save(credentials, to: keychain)
+        let id = activeID ?? AccountStore.legacyDefaultID
+        let label = accounts.first { $0.id == id }?.label ?? ""
+        upsert(Account(id: id, label: label, credentials: credentials))
+        activeID = id
         self.credentials = credentials
+        try persistAccounts()
+    }
+
+    /// Insert or replace an account by id, preserving list order on replace.
+    func upsert(_ account: Account) {
+        if let i = accounts.firstIndex(where: { $0.id == account.id }) {
+            accounts[i] = account
+        } else {
+            accounts.append(account)
+        }
     }
 
     public func signOut() {
+        AccountStore.clear(from: keychain)
         OAuthService.clear(from: keychain)
         try? keychain.delete(account: Self.legacyCredentialsAccount)
         try? keychain.delete(account: Self.platformCredentialsAccount)
         stopPolling()
+        accounts = []
+        activeID = nil
         credentials = nil
         usage = nil
         organizationDetails = nil
@@ -108,7 +137,12 @@ public final class AppState {
     /// Non-destructive recovery: drops the token set but preserves
     /// `organizationDetails` so the re-login screen can name the account.
     func handleSessionExpired() {
-        OAuthService.clear(from: keychain)
+        // Drop only the expired account from the persisted set — its refresh
+        // token is dead and re-login will create a fresh entry. Other accounts
+        // (once multi-account is wired up) are untouched.
+        accounts.removeAll { $0.id == activeID }
+        activeID = nil
+        try? persistAccounts()
         credentials = nil
         usage = nil
         error = .sessionExpired
@@ -151,7 +185,7 @@ public final class AppState {
             lastUpdated = Date()
             // Fetch the profile once per session — org name and tier are stable.
             if organizationDetails == nil {
-                organizationDetails = try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken)
+                organizationDetails = (try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken))?.organization
             }
             // Platform credits — no-ops when no platform key is connected.
             Task { @MainActor [weak self] in

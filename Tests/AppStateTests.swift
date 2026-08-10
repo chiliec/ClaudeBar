@@ -40,6 +40,18 @@ struct AppStateTests {
         reloaded.signOut()
     }
 
+    @Test func refreshedTokensPersistIntoActiveAccount() throws {
+        let state = makeState()
+        try state.saveCredentials(testCredentials())          // creates active "default" account
+        let newer = OAuthCredentials(accessToken: "sk-at-new", refreshToken: "sk-rt-new",
+                                     expiresAt: Date().addingTimeInterval(7200))
+        try state.saveCredentials(newer)                       // simulate refresh write-back
+        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        #expect(reloaded.credentials == newer)
+        #expect(reloaded.accounts.count == 1)                  // upsert, not duplicate
+        reloaded.signOut()
+    }
+
     // MARK: - Menu Bar Display Values
 
     @Test func menuBarTextWithNoUsage() {
