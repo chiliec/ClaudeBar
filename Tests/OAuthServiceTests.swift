@@ -20,20 +20,34 @@ struct OAuthServiceTests {
     }
 
     @Test func authorizeURLCarriesEveryPKCEParameter() throws {
-        let url = try OAuthService.authorizeURL(codeChallenge: "chal-123", state: "state-abc")
+        let url = try OAuthService.authorizeURL(codeChallenge: "chal-123", state: "state-abc", port: 54545)
         let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
         var params: [String: String] = [:]
         for item in components.queryItems ?? [] { params[item.name] = item.value }
 
-        #expect(components.host == "claude.ai")
-        #expect(components.path == "/oauth/authorize")
+        #expect(components.host == "claude.com")
+        #expect(components.path == "/cai/oauth/authorize")
+        #expect(params["code"] == "true")
         #expect(params["response_type"] == "code")
         #expect(params["client_id"] == OAuthService.clientID)
         #expect(params["redirect_uri"] == "http://localhost:54545/callback")
         #expect(params["code_challenge"] == "chal-123")
         #expect(params["code_challenge_method"] == "S256")
         #expect(params["state"] == "state-abc")
-        #expect(params["scope"] == OAuthService.scope)
+        // Spaces travel as `+` (URLSearchParams form-encoding, matching the
+        // CLI); URLComponents doesn't decode that, so undo it here.
+        #expect(params["scope"]?.replacingOccurrences(of: "+", with: " ") == OAuthService.scope)
+    }
+}
+
+@Suite
+struct OAuthCallbackServerTests {
+    /// Regression: the timeout used to deadlock in the task group's implicit
+    /// await because `accept()`'s continuation ignored cancellation.
+    @Test func timeoutThrowsInsteadOfHanging() async {
+        await #expect(throws: OAuthError.timedOut) {
+            _ = try await OAuthCallbackServer().waitForCallback(timeout: 0.2) { _ in }
+        }
     }
 }
 

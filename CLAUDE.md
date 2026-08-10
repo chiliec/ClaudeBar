@@ -5,7 +5,7 @@ Native SwiftUI macOS menu bar app (macOS 14+) showing Claude.ai subscription usa
 ```bash
 ./scripts/run.sh                            # Build + sign + run (development)
 ./scripts/bundle.sh                         # Release build + .app bundle
-swift test                                  # All tests (65 tests)
+swift test                                  # All tests
 swift test --filter AppStateTests           # Single suite
 swift test --filter ClaudeBarTests.AppStateTests.testMenuBarTextWithNoUsage
 ```
@@ -14,7 +14,8 @@ swift test --filter ClaudeBarTests.AppStateTests.testMenuBarTextWithNoUsage
 ## Architecture
 Three-layer: Views → `AppState` (`@Observable` class) → Services
 
-- `ClaudeAPIClient`: stateless struct. Auth: `Cookie: sessionKey={value}` on `https://claude.ai/api/...`
+- `ClaudeAPIClient`: stateless. Usage/profile via `GET api.anthropic.com/api/oauth/{usage,profile}` with `Authorization: Bearer <token>` + `anthropic-beta: oauth-2025-04-20`
+- `OAuthService`: PKCE sign-in through the browser (client ID is Claude Code's), token refresh, Keychain blob (`oauth_credentials`). `OAuthCallbackServer` is a one-shot `NWListener` on an OS-assigned ephemeral port (the authorize URL must match Claude Code CLI's byte-for-byte — see `authorizeURL`)
 - `KeychainService`: struct with injectable `serviceName`. Tests use `com.claudebar.test`.
 - **API quirk**: utilization returned 0–100; `WindowUsage` normalizes to 0–1.0 on decode (values > 1.0 divided by 100)
 - Date parsing: custom decoder handles ISO 8601 with/without fractional seconds (`.000Z` vs `Z`)

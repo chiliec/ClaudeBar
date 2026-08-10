@@ -66,7 +66,7 @@
 "usage.total" = "Total";
 "usage.usageCredits" = "Usage Credits";
 "usage.updatedAgo %@" = "Updated %@ ago";
-"oauthError.listenerFailed" = "Couldn't start sign-in — port 54545 is in use. Close other Claude sign-in windows and try again.";
+"oauthError.listenerFailed" = "Couldn't start the local sign-in listener. Try again.";
 "oauthError.timedOut" = "Sign-in timed out. Try again.";
 "oauthError.stateMismatch" = "Sign-in couldn't be verified. Try again.";
 "oauthError.denied" = "Sign-in was cancelled.";

@@ -66,7 +66,7 @@
 "usage.total" = "Всего";
 "usage.usageCredits" = "Кредитные лимиты";
 "usage.updatedAgo %@" = "Обновлено %@ назад";
-"oauthError.listenerFailed" = "Не удалось начать вход — порт 54545 занят. Закройте другие окна входа Claude и попробуйте снова.";
+"oauthError.listenerFailed" = "Не удалось запустить локальный обработчик входа. Попробуйте снова.";
 "oauthError.timedOut" = "Время входа истекло. Попробуйте снова.";
 "oauthError.stateMismatch" = "Не удалось проверить вход. Попробуйте снова.";
 "oauthError.denied" = "Вход отменён.";
