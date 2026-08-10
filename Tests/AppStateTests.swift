@@ -200,6 +200,22 @@ struct AppStateTests {
         #expect(state.organizationDetails?.name == "Acme")
     }
 
+    @Test func handleSessionExpiredSurvivesRelaunch() throws {
+        // Regression guard: pre-fix, handleSessionExpired() only cleared the
+        // legacy single-credential Keychain key, leaving the AccountStore blob
+        // intact — so a fresh AppState over the same keychain would resurrect
+        // the "expired" account on next load.
+        let state = makeState()
+        try state.saveCredentials(testCredentials())
+
+        state.handleSessionExpired()
+
+        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        #expect(!reloaded.isAuthenticated)
+        #expect(reloaded.accounts.isEmpty)
+        reloaded.signOut()
+    }
+
     @Test func loadCredentialsDropsLegacyCookieItem() throws {
         let keychain = KeychainService(serviceName: "com.claudebar.test")
         try keychain.save(account: "credentials", value: "sk-old\u{0}org-old")
