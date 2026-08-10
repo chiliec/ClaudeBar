@@ -269,3 +269,64 @@ extension OAuthService {
         try? keychain.delete(account: keychainAccount)
     }
 }
+
+// MARK: - Multi-account storage
+
+public struct Account: Codable, Equatable, Identifiable {
+    public let id: String
+    public var label: String
+    public var credentials: OAuthCredentials
+
+    public init(id: String, label: String, credentials: OAuthCredentials) {
+        self.id = id
+        self.label = label
+        self.credentials = credentials
+    }
+}
+
+public struct AccountSet: Codable, Equatable {
+    public var accounts: [Account]
+    public var activeID: String?
+
+    public init(accounts: [Account], activeID: String?) {
+        self.accounts = accounts
+        self.activeID = activeID
+    }
+}
+
+/// Single-blob store for the whole account set. One Keychain item, encoded as
+/// JSON — mirrors how `OAuthService` already stores a lone credential blob.
+enum AccountStore {
+    static let keychainAccount = "oauth_accounts"
+    /// Id assigned to the one account produced by migrating the legacy
+    /// single-credential blob (its real `account.uuid` is unknown until the
+    /// first profile fetch backfills it).
+    static let legacyDefaultID = "default"
+
+    static func load(from keychain: any KeychainServicing) throws -> AccountSet {
+        if let json = try keychain.retrieve(account: keychainAccount),
+           let set = try? JSONDecoder().decode(AccountSet.self, from: Data(json.utf8)) {
+            return set
+        }
+        // Migrate a legacy single-credential blob, if present.
+        if let legacy = try OAuthService.load(from: keychain) {
+            let migrated = AccountSet(
+                accounts: [Account(id: legacyDefaultID, label: "", credentials: legacy)],
+                activeID: legacyDefaultID
+            )
+            try save(migrated, to: keychain)
+            OAuthService.clear(from: keychain)
+            return migrated
+        }
+        return AccountSet(accounts: [], activeID: nil)
+    }
+
+    static func save(_ set: AccountSet, to keychain: any KeychainServicing) throws {
+        let data = try JSONEncoder().encode(set)
+        try keychain.save(account: keychainAccount, value: String(decoding: data, as: UTF8.self))
+    }
+
+    static func clear(from keychain: any KeychainServicing) {
+        try? keychain.delete(account: keychainAccount)
+    }
+}
