@@ -127,10 +127,12 @@ struct ClaudeAPIClientTests {
         }
         """.data(using: .utf8)!
 
-        let details = try ClaudeAPIClient.parseProfileResponse(data: json)
-        #expect(details.uuid == "org-1")
-        #expect(details.name == "Personal")
-        #expect(details.tier == .max5x)
+        let result = try ClaudeAPIClient.parseProfileResponse(data: json)
+        #expect(result.organization.uuid == "org-1")
+        #expect(result.organization.name == "Personal")
+        #expect(result.organization.tier == .max5x)
+        #expect(result.account.uuid == "acct-1")
+        #expect(result.account.email == "user@example.com")
     }
 
     /// Real payload captured from /api/oauth/usage on 2026-08-10 — the schema

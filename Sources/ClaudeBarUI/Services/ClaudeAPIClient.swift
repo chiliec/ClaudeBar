@@ -65,6 +65,21 @@ extension ISO8601DateFormatter {
 
 // MARK: - OAuth data endpoints (api.anthropic.com)
 
+public struct AccountIdentity: Equatable {
+    public let uuid: String
+    public let email: String
+    public init(uuid: String, email: String) { self.uuid = uuid; self.email = email }
+}
+
+public struct ProfileResult: Equatable {
+    public let account: AccountIdentity
+    public let organization: OrganizationDetails
+    public init(account: AccountIdentity, organization: OrganizationDetails) {
+        self.account = account
+        self.organization = organization
+    }
+}
+
 extension ClaudeAPIClient {
     private static let oauthBaseURL = "https://api.anthropic.com"
     private static let oauthBetaHeader = "oauth-2025-04-20"
@@ -82,22 +97,27 @@ extension ClaudeAPIClient {
 
     /// Maps `/api/oauth/profile` onto the existing `OrganizationDetails` so the
     /// tier pill and header name keep working unchanged.
-    public static func parseProfileResponse(data: Data) throws -> OrganizationDetails {
+    public static func parseProfileResponse(data: Data) throws -> ProfileResult {
         struct Envelope: Decodable {
+            struct Account: Decodable { let uuid: String; let email: String }
             struct Org: Decodable {
                 let uuid: String
                 let name: String
                 let rateLimitTier: String?
             }
+            let account: Account
             let organization: Org
         }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let envelope = try decoder.decode(Envelope.self, from: data)
-        return OrganizationDetails(
-            uuid: envelope.organization.uuid,
-            name: envelope.organization.name,
-            rateLimitTier: envelope.organization.rateLimitTier
+        return ProfileResult(
+            account: AccountIdentity(uuid: envelope.account.uuid, email: envelope.account.email),
+            organization: OrganizationDetails(
+                uuid: envelope.organization.uuid,
+                name: envelope.organization.name,
+                rateLimitTier: envelope.organization.rateLimitTier
+            )
         )
     }
 
@@ -108,7 +128,7 @@ extension ClaudeAPIClient {
         return try parseUsageResponse(data: data)
     }
 
-    public static func fetchOAuthProfile(accessToken: String) async throws -> OrganizationDetails {
+    public static func fetchOAuthProfile(accessToken: String) async throws -> ProfileResult {
         let request = try buildOAuthRequest(path: "/api/oauth/profile", accessToken: accessToken)
         let (data, response) = try await URLSession.shared.data(for: request)
         try validateHTTPResponse(response)

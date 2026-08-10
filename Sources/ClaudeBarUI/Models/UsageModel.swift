@@ -343,7 +343,7 @@ public struct Organization: Codable, Equatable {
     }
 }
 
-public struct OrganizationDetails: Codable {
+public struct OrganizationDetails: Codable, Equatable {
     public let uuid: String
     public let name: String
     public let rateLimitTier: String?
