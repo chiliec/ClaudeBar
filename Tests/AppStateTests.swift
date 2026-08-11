@@ -8,7 +8,7 @@ struct AppStateTests {
     private func makeState() -> AppState {
         let state = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
         // Clean slate
-        state.signOut()
+        state.wipeAllState()
         return state
     }
 
@@ -37,7 +37,7 @@ struct AppStateTests {
         // A fresh state over the same keychain sees them
         let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
         #expect(reloaded.credentials == creds)
-        reloaded.signOut()
+        reloaded.wipeAllState()
     }
 
     @Test func refreshedTokensPersistIntoActiveAccount() throws {
@@ -49,7 +49,7 @@ struct AppStateTests {
         let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
         #expect(reloaded.credentials == newer)
         #expect(reloaded.accounts.count == 1)                  // upsert, not duplicate
-        reloaded.signOut()
+        reloaded.wipeAllState()
     }
 
     // MARK: - Menu Bar Display Values
@@ -169,13 +169,13 @@ struct AppStateTests {
 
     // MARK: - Sign Out & Session-Expired
 
-    @Test func signOutWipesEverything() throws {
+    @Test func wipeAllStateClearsEverything() throws {
         let state = makeState()
         try state.saveCredentials(testCredentials())
         state.usage = UsageResponse(fiveHour: nil, sevenDay: WindowUsage(utilization: 0.5, resetsAt: nil))
         state.organizationDetails = OrganizationDetails(uuid: "org-1", name: "Acme", rateLimitTier: nil)
 
-        state.signOut()
+        state.wipeAllState()
 
         #expect(state.credentials == nil)
         #expect(!state.isAuthenticated)
@@ -213,7 +213,7 @@ struct AppStateTests {
         let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
         #expect(!reloaded.isAuthenticated)
         #expect(reloaded.accounts.isEmpty)
-        reloaded.signOut()
+        reloaded.wipeAllState()
     }
 
     @Test func loadCredentialsDropsLegacyCookieItem() throws {
@@ -224,7 +224,7 @@ struct AppStateTests {
 
         #expect(try keychain.retrieve(account: "credentials") == nil)
         #expect(!state.isAuthenticated)
-        state.signOut()
+        state.wipeAllState()
     }
 
     // MARK: - Initial UI State
@@ -239,7 +239,7 @@ struct AppStateTests {
 
     // MARK: - Platform State
 
-    @Test func signOutClearsAllPlatformState() throws {
+    @Test func wipeAllStateClearsAllPlatformState() throws {
         let state = makeState()
         try state.saveCredentials(testCredentials())
         state.platformSessionKey = "sk-platform"
@@ -247,7 +247,7 @@ struct AppStateTests {
         state.platformCreditsIsStale = true
         state.cachedPlatformOrgId = "platform-org-1"
 
-        state.signOut()
+        state.wipeAllState()
 
         #expect(state.platformSessionKey == nil)
         #expect(state.platformCredits == nil)
@@ -302,7 +302,7 @@ struct AppStateTests {
         #expect(state.usage != nil)
         #expect(state.isSwitchingAccount)
         #expect(state.organizationDetails == nil)   // header falls back to the new label
-        state.signOut()
+        state.wipeAllState()
     }
 
     @Test func removeActiveReactivatesAnother() throws {
@@ -315,7 +315,7 @@ struct AppStateTests {
         #expect(state.activeID == "u2")
         #expect(state.credentials != nil)
         #expect(state.error == nil)
-        state.signOut()
+        state.wipeAllState()
     }
 
     @Test func removeLastAccountLeavesUnauthenticated() throws {
@@ -326,7 +326,7 @@ struct AppStateTests {
         #expect(state.accounts.isEmpty)
         #expect(state.activeID == nil)
         #expect(!state.isAuthenticated)
-        state.signOut()
+        state.wipeAllState()
     }
 
     @Test func reconcileIdentityRekeysMigratedAccount() throws {
@@ -339,7 +339,7 @@ struct AppStateTests {
         #expect(state.activeID == "real-uuid")
         #expect(state.accounts.first?.id == "real-uuid")
         #expect(state.accounts.first?.label == "real@x.com")
-        state.signOut()
+        state.wipeAllState()
     }
 
     private struct FakeKeychain: KeychainServicing {

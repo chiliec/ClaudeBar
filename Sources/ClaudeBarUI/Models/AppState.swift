@@ -180,7 +180,10 @@ public final class AppState {
         try? persistAccounts()
     }
 
-    public func signOut() {
+    /// Wipes every Keychain blob and all in-memory state. No UI calls this —
+    /// per-account removal is `removeAccount(id:)`; this survives as the tests'
+    /// clean-slate/teardown helper.
+    func wipeAllState() {
         AccountStore.clear(from: keychain)
         OAuthService.clear(from: keychain)
         try? keychain.delete(account: Self.legacyCredentialsAccount)

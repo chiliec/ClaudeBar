@@ -205,7 +205,7 @@ struct UsageDetailViewHeaderTests {
         state.activeID = "u1"
         let view = UsageDetailView(state: state)
         #expect(view.state.accounts.count == 2)   // switcher data is wired
-        state.signOut()
+        state.wipeAllState()
     }
 
     // MARK: - Per-model 7-day window rows
@@ -336,7 +336,7 @@ struct SettingsViewTests {
         state.activeID = "u1"
         let view = SettingsView(state: state)
         #expect(view.state.accounts.count == 1)
-        state.signOut()
+        state.wipeAllState()
     }
 
     @Test func showsQuitButton() throws {
