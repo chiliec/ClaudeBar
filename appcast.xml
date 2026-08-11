@@ -6,6 +6,19 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.26</title>
+      <pubDate>Tue, 11 Aug 2026 07:33:17 +0000</pubDate>
+      <sparkle:version>0.0.26</sparkle:version>
+      <sparkle:shortVersionString>0.0.26</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Update dialog no longer hides
+
+The Sparkle "Software Update" window used to open behind other windows —
+clicking **Check for Updates** looked like it did nothing. ClaudeBar now brings
+itself forward before showing update UI, for both manual and scheduled checks.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.26/ClaudeBar.zip" sparkle:edSignature="Qkb12qQF54ZfwXWZqmPm3Xw7PubJxipWifrUx/7+1yniyeFqFcarD6DFZJATf/kWHB4CSxSgizPcSmf470/iCQ==" length="3241920" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.25</title>
       <pubDate>Tue, 11 Aug 2026 07:06:40 +0000</pubDate>
       <sparkle:version>0.0.25</sparkle:version>
