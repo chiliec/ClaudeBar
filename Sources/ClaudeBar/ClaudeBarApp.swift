@@ -46,8 +46,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // hanging off it. Measured from the widest label rather than guessed, so the
         // item is exactly as wide as it needs to be.
         // "100%" is the widest possible label (utilization is capped), so its width
-        // IS the slot — no extra padding; shorter labels center in the slack.
-        statusItem.length = ("100%" as NSString).size(withAttributes: [.font: font]).width
+        // IS the slot; shorter labels center in the slack.
+        // Measure the *button*, not the string: the cell insets its title, so a slot
+        // sized to the bare string width leaves "100%" ~4pt short and the cell wraps
+        // it onto two lines. intrinsicContentSize includes those insets.
+        button.title = "100%"
+        statusItem.length = button.intrinsicContentSize.width
         button.alignment = .center
         button.target = self
         button.action = #selector(togglePanel)
