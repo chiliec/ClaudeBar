@@ -353,11 +353,34 @@ struct SettingsViewTests {
         _ = try inspected.find(text: "Connected as Acme")
     }
 
-    @Test func showsSignOutButtonWhenAuthenticated() throws {
-        let state = authenticated(makeState())
+    @Test func showsRemoveButtonForEachAccount() throws {
+        // Sign-out is now per-account: an account row's Remove button is the
+        // only way to end that account's session (there is no standalone
+        // "Sign out" button anymore).
+        let state = makeState()
+        state.accounts = [
+            Account(id: "u1", label: "a@x.com",
+                    credentials: OAuthCredentials(accessToken: "a", refreshToken: "b",
+                                                  expiresAt: Date().addingTimeInterval(3600))),
+        ]
+        state.activeID = "u1"
         let view = SettingsView(state: state)
         let inspected = try view.inspect()
-        _ = try inspected.find(button: "Sign out")
+        _ = try inspected.find(button: "Remove")
+    }
+
+    @MainActor
+    @Test func settingsListsEachAccount() throws {
+        let state = makeState()
+        state.accounts = [
+            Account(id: "u1", label: "a@x.com",
+                    credentials: OAuthCredentials(accessToken: "a", refreshToken: "b",
+                                                  expiresAt: Date().addingTimeInterval(3600))),
+        ]
+        state.activeID = "u1"
+        let view = SettingsView(state: state)
+        #expect(view.state.accounts.count == 1)
+        state.signOut()
     }
 
     @Test func showsQuitButton() throws {

@@ -6,8 +6,8 @@
 "action.quit" = "Выйти из ClaudeBar";
 "action.reconnect" = "Переподключить";
 "action.refresh" = "Обновить";
+"action.remove" = "Удалить";
 "action.signIn" = "Войти через Claude";
-"action.signOut" = "Выйти";
 "action.update" = "Обновить";
 "header.openSettings" = "Настройки…";
 "apiError.httpError %lld" = "HTTP %lld";
@@ -22,6 +22,7 @@
 "keychain.locked" = "Доступ к Keychain запрещён";
 "keychain.lockedSubtitle" = "macOS заблокировала доступ к сохранённой сессии — обычно это происходит после обновления приложения с новым сертификатом подписи. Войдите снова.";
 "section.apiCredits" = "API кредиты";
+"settings.accounts" = "Аккаунты";
 "session.expired" = "Сессия истекла";
 "session.expiredSubtitle" = "Сессия Claude истекла. Войдите снова, чтобы продолжить отслеживание.";
 "session.reconnect %@" = "Переподключить %@";
@@ -36,7 +37,6 @@
 "settings.platformAPI.expired" = "Отключено · сессия истекла";
 "settings.platformAPI.disconnect" = "Отключить";
 "settings.platformAPI.pasteManually" = "Вставьте sessionKey с platform.claude.com";
-"settings.session" = "Сессия";
 "settings.title" = "Настройки";
 "setup.instructions" = "Войдите в свой аккаунт Claude. Откроется браузер на claude.ai — подтвердите доступ и вернитесь сюда.";
 "setup.sessionKeyPlaceholder" = "Вставьте sessionKey сюда...";

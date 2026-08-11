@@ -71,23 +71,52 @@ public struct SettingsView: View {
     private var sessionGroup: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 10) {
-                connectionStatusLine
-
-                if state.isAuthenticated {
-                    Button {
-                        state.signOut()
-                    } label: {
-                        Text("action.signOut", bundle: .module)
+                if state.accounts.isEmpty {
+                    connectionStatusLine
+                } else {
+                    ForEach(state.accounts) { account in
+                        accountRow(account)
                     }
-                    .buttonStyle(.borderless)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
                 }
+                Button {
+                    Task { await state.signIn() }
+                } label: { Text("action.addAccount", bundle: .module) }
+                .modifier(BorderedButtonModifier())
+                .controlSize(.small)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(4)
         } label: {
-            Text("settings.session", bundle: .module)
+            Text("settings.accounts", bundle: .module)
+        }
+    }
+
+    @ViewBuilder
+    private func accountRow(_ account: Account) -> some View {
+        HStack {
+            Circle()
+                .fill(account.id == state.activeID ? .green : .secondary)
+                .frame(width: 8, height: 8)
+            let label = account.label.isEmpty
+                ? String(localized: "settings.connected", bundle: .module)
+                : account.label
+            if account.id == state.activeID {
+                Text(label)
+                    .font(.subheadline)
+            } else {
+                Button {
+                    state.switchTo(id: account.id)
+                } label: { Text(label) }
+                .buttonStyle(.borderless)
+                .font(.subheadline)
+            }
+            Spacer()
+            Button {
+                state.removeAccount(id: account.id)
+            } label: { Text("action.remove", bundle: .module) }
+            .buttonStyle(.borderless)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
         }
     }
 

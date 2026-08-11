@@ -6,8 +6,8 @@
 "action.quit" = "Quit ClaudeBar";
 "action.reconnect" = "Reconnect";
 "action.refresh" = "Refresh";
+"action.remove" = "Remove";
 "action.signIn" = "Sign in with Claude";
-"action.signOut" = "Sign out";
 "action.update" = "Update";
 "header.openSettings" = "Settings…";
 "apiError.httpError %lld" = "HTTP %lld";
@@ -22,6 +22,7 @@
 "keychain.locked" = "Keychain Access Denied";
 "keychain.lockedSubtitle" = "macOS blocked access to your saved session, usually after an app update changes its signing certificate. Sign in again to fix it.";
 "section.apiCredits" = "API Credits";
+"settings.accounts" = "Accounts";
 "session.expired" = "Session Expired";
 "session.expiredSubtitle" = "Your Claude session expired. Sign in again to keep tracking usage.";
 "session.reconnect %@" = "Reconnect %@";
@@ -36,7 +37,6 @@
 "settings.platformAPI.expired" = "Disconnected · session expired";
 "settings.platformAPI.disconnect" = "Disconnect";
 "settings.platformAPI.pasteManually" = "Paste sessionKey from platform.claude.com";
-"settings.session" = "Session";
 "settings.title" = "Settings";
 "setup.instructions" = "Sign in with your Claude account. Your browser will open to claude.ai — approve access and come back here.";
 "setup.sessionKeyPlaceholder" = "Paste sessionKey here...";
