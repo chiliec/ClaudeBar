@@ -33,6 +33,10 @@ public final class AppState {
 
     // MARK: - UI State
     public var showingSettings = false
+    /// True from the moment an account switch starts until its first usage lands.
+    /// The popover keeps the previous account's layout (redacted) meanwhile, so the
+    /// panel doesn't collapse to a spinner and spring back a second later.
+    public var isSwitchingAccount = false
 
     // MARK: - Services
     private let keychain: any KeychainServicing
@@ -122,7 +126,9 @@ public final class AppState {
         guard id != activeID, accounts.contains(where: { $0.id == id }) else { return }
         activeID = id
         credentials = activeAccount?.credentials
-        usage = nil
+        // `usage` deliberately survives: it's the old account's, so it gets redacted
+        // rather than shown, but keeping the layout stops the panel resizing twice.
+        isSwitchingAccount = true
         organizationDetails = nil
         lastUpdated = nil
         error = nil
@@ -268,6 +274,7 @@ public final class AppState {
             self.error = .network(error.localizedDescription)
         }
         isLoading = false
+        isSwitchingAccount = false
     }
 
     private func refreshAndSave(_ creds: OAuthCredentials) async throws -> OAuthCredentials {

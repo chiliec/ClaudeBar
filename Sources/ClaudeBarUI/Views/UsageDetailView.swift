@@ -41,6 +41,9 @@ struct UsageDetailView: View {
             }
             footer
         }
+        // Mid-switch the numbers still belong to the previous account, so hide their
+        // values while keeping their layout — the panel stays exactly as tall as it was.
+        .redacted(reason: state.isSwitchingAccount ? .placeholder : [])
     }
 
     private var header: some View {

@@ -288,7 +288,7 @@ struct AppStateTests {
         Account(id: id, label: label, credentials: testCredentials())
     }
 
-    @Test func switchToChangesActiveAndClearsUsage() throws {
+    @Test func switchToChangesActiveAndMarksTheSwitch() throws {
         let state = makeState()
         state.accounts = [account("u1", "a@x.com"), account("u2", "b@x.com")]
         state.activeID = "u1"
@@ -297,7 +297,11 @@ struct AppStateTests {
         state.switchTo(id: "u2")
         #expect(state.activeID == "u2")
         #expect(state.credentials == state.accounts.first { $0.id == "u2" }?.credentials)
-        #expect(state.usage == nil)                 // cleared; fresh fetch will refill
+        // Usage survives on purpose — redacted by the view until the new one lands,
+        // which keeps the panel from collapsing and re-expanding mid-switch.
+        #expect(state.usage != nil)
+        #expect(state.isSwitchingAccount)
+        #expect(state.organizationDetails == nil)   // header falls back to the new label
         state.signOut()
     }
 
