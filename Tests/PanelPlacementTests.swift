@@ -8,43 +8,44 @@ struct PanelPlacementTests {
     private let screen = CGRect(x: 0, y: 0, width: 1440, height: 876)
     private let panel = CGSize(width: 320, height: 400)
 
-    private func statusItem(maxX: CGFloat, width: CGFloat = 80) -> CGRect {
-        CGRect(x: maxX - width, y: 876, width: width, height: 24)
+    private func statusItem(minX: CGFloat, width: CGFloat = 50) -> CGRect {
+        CGRect(x: minX, y: 876, width: width, height: 24)
     }
 
-    @Test func pinsRightEdgeToStatusItemRightEdge() {
-        let item = statusItem(maxX: 1200)
+    @Test func hangsFromTheStatusItemLeftEdge() {
+        let item = statusItem(minX: 1100)
         let origin = menuBarPanelOrigin(statusItem: item, panelSize: panel, visibleFrame: screen)
 
-        #expect(origin.x + panel.width == item.maxX)
-    }
-
-    @Test func widerLabelDoesNotMovePanel() {
-        // Same right edge, different widths — this is the drift the pinning prevents.
-        let narrow = menuBarPanelOrigin(statusItem: statusItem(maxX: 1200, width: 50),
-                                        panelSize: panel, visibleFrame: screen)
-        let wide = menuBarPanelOrigin(statusItem: statusItem(maxX: 1200, width: 140),
-                                      panelSize: panel, visibleFrame: screen)
-
-        #expect(narrow == wide)
+        #expect(origin.x == item.minX)
     }
 
     @Test func hangsBelowTheStatusItem() {
-        let item = statusItem(maxX: 1200)
+        let item = statusItem(minX: 1100)
         let origin = menuBarPanelOrigin(statusItem: item, panelSize: panel, visibleFrame: screen)
 
         #expect(origin.y == item.minY - panel.height - 4)
     }
 
+    /// The item's width is pinned in AppDelegate precisely so this holds: a wider
+    /// label must not drag the panel sideways.
+    @Test func labelWidthDoesNotMovePanel() {
+        let narrow = menuBarPanelOrigin(statusItem: statusItem(minX: 1100, width: 50),
+                                        panelSize: panel, visibleFrame: screen)
+        let wide = menuBarPanelOrigin(statusItem: statusItem(minX: 1100, width: 140),
+                                      panelSize: panel, visibleFrame: screen)
+
+        #expect(narrow == wide)
+    }
+
     @Test func clampsToScreenWhenStatusItemIsNearTheRightEdge() {
-        let origin = menuBarPanelOrigin(statusItem: statusItem(maxX: 1439),
+        let origin = menuBarPanelOrigin(statusItem: statusItem(minX: 1400),
                                         panelSize: panel, visibleFrame: screen)
 
         #expect(origin.x + panel.width <= screen.maxX)
     }
 
-    @Test func clampsToScreenWhenStatusItemIsNearTheLeftEdge() {
-        let origin = menuBarPanelOrigin(statusItem: statusItem(maxX: 100),
+    @Test func clampsToScreenWhenStatusItemIsAtTheLeftEdge() {
+        let origin = menuBarPanelOrigin(statusItem: statusItem(minX: 0),
                                         panelSize: panel, visibleFrame: screen)
 
         #expect(origin.x >= screen.minX)
@@ -52,7 +53,7 @@ struct PanelPlacementTests {
 
     @Test func staysOnScreenWhenPanelIsWiderThanTheDisplay() {
         let narrowScreen = CGRect(x: 0, y: 0, width: 200, height: 400)
-        let origin = menuBarPanelOrigin(statusItem: statusItem(maxX: 180),
+        let origin = menuBarPanelOrigin(statusItem: statusItem(minX: 130),
                                         panelSize: panel, visibleFrame: narrowScreen)
 
         #expect(origin.x >= narrowScreen.minX)
@@ -61,9 +62,9 @@ struct PanelPlacementTests {
     @Test func respectsANonZeroScreenOrigin() {
         // Second display to the right of the primary one.
         let secondary = CGRect(x: 1440, y: 0, width: 1920, height: 1056)
-        let origin = menuBarPanelOrigin(statusItem: CGRect(x: 1500, y: 1056, width: 80, height: 24),
+        let origin = menuBarPanelOrigin(statusItem: CGRect(x: 3300, y: 1056, width: 50, height: 24),
                                         panelSize: panel, visibleFrame: secondary)
 
-        #expect(origin.x >= secondary.minX)
+        #expect(origin.x + panel.width <= secondary.maxX)
     }
 }
