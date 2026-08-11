@@ -6,6 +6,19 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.28</title>
+      <pubDate>Tue, 11 Aug 2026 10:44:46 +0000</pubDate>
+      <sparkle:version>0.0.28</sparkle:version>
+      <sparkle:shortVersionString>0.0.28</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### "100%" no longer wraps in the menu bar
+
+At exactly 100% usage the menu bar label broke onto two lines, showing a
+clipped "100" stacked over "%". The item is now measured the way the system
+lays the text out, so a full bar reads as one line.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.28/ClaudeBar.zip" sparkle:edSignature="DIh2Se2MQR5VAW5CSYWRB3IEEbON1g9vvETLlVSAv74NM389kWZD01aUMuihx2vTxkLzBDjhmRbKVPaeGxmcCA==" length="3238302" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.27</title>
       <pubDate>Tue, 11 Aug 2026 07:59:50 +0000</pubDate>
       <sparkle:version>0.0.27</sparkle:version>
