@@ -52,23 +52,10 @@ public final class AppState {
 
     // MARK: - Computed Display Values
 
-    /// Latest utilization per account id, so the menu bar can show every account at
-    /// once. The active account's entry is filled by `refreshUsage`; the rest by
-    /// `refreshOtherAccounts`.
-    public var utilizationByAccount: [String: Double] = [:]
-
     public var menuBarText: String {
-        guard accounts.count > 1 else {
-            guard let usage else { return "—%" }
-            return Self.percent(usage.fiveHour?.utilization ?? usage.sevenDay.utilization)
-        }
-        return accounts
-            .map { utilizationByAccount[$0.id].map(Self.percent) ?? "—%" }
-            .joined(separator: " · ")
-    }
-
-    private static func percent(_ utilization: Double) -> String {
-        "\(Int(utilization * 100))%"
+        guard let usage else { return "—%" }
+        let pct = Int((usage.fiveHour?.utilization ?? usage.sevenDay.utilization) * 100)
+        return "\(pct)%"
     }
 
     public var menuBarUtilization: Double {
@@ -190,7 +177,6 @@ public final class AppState {
         activeID = nil
         credentials = nil
         usage = nil
-        utilizationByAccount = [:]
         organizationDetails = nil
         error = nil
         platformSessionKey = nil
@@ -260,7 +246,6 @@ public final class AppState {
                 usage = try await ClaudeAPIClient.fetchOAuthUsage(accessToken: creds.accessToken)
             }
             lastUpdated = Date()
-            if let activeID { utilizationByAccount[activeID] = menuBarUtilization }
             // Fetch the profile once per session — org name and tier are stable.
             if organizationDetails == nil {
                 if let profile = try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken) {
@@ -271,9 +256,6 @@ public final class AppState {
             // Platform credits — no-ops when no platform key is connected.
             Task { @MainActor [weak self] in
                 await self?.refreshPlatformCredits()
-            }
-            Task { @MainActor [weak self] in
-                await self?.refreshOtherAccounts()
             }
         } catch APIError.sessionExpired {
             handleSessionExpired()
@@ -286,40 +268,6 @@ public final class AppState {
             self.error = .network(error.localizedDescription)
         }
         isLoading = false
-    }
-
-    /// Fetch usage for the accounts that aren't active, purely to fill in the menu bar
-    /// label. Failures are swallowed on purpose: a dead token on a background account
-    /// must not push the whole app into the session-expired state — that stays the
-    /// active account's job, and the stale entry just drops out of the label.
-    func refreshOtherAccounts() async {
-        utilizationByAccount = utilizationByAccount.filter { id, _ in
-            accounts.contains { $0.id == id }
-        }
-        for account in accounts where account.id != activeID {
-            guard let utilization = await fetchUtilization(for: account) else {
-                utilizationByAccount[account.id] = nil
-                continue
-            }
-            utilizationByAccount[account.id] = utilization
-        }
-    }
-
-    private func fetchUtilization(for account: Account) async -> Double? {
-        var creds = account.credentials
-        do {
-            if OAuthService.needsRefresh(creds) {
-                creds = try await OAuthService.refresh(creds)
-                if let i = accounts.firstIndex(where: { $0.id == account.id }) {
-                    accounts[i].credentials = creds
-                    try? persistAccounts()
-                }
-            }
-            let usage = try await ClaudeAPIClient.fetchOAuthUsage(accessToken: creds.accessToken)
-            return usage.fiveHour?.utilization ?? usage.sevenDay.utilization
-        } catch {
-            return nil
-        }
     }
 
     private func refreshAndSave(_ creds: OAuthCredentials) async throws -> OAuthCredentials {

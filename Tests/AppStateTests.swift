@@ -99,23 +99,6 @@ struct AppStateTests {
         #expect(state.menuBarText == "100%")
     }
 
-    @Test func menuBarTextListsEveryAccountInOrder() {
-        let state = makeState()
-        state.accounts = [account("u1", "a@x.com"), account("u2", "b@x.com")]
-        state.activeID = "u1"
-        state.utilizationByAccount = ["u1": 0.13, "u2": 1.0]
-
-        #expect(state.menuBarText == "13% · 100%")
-    }
-
-    @Test func menuBarTextMarksAccountsWithNoUsageYet() {
-        let state = makeState()
-        state.accounts = [account("u1", "a@x.com"), account("u2", "b@x.com")]
-        state.utilizationByAccount = ["u2": 0.5]
-
-        #expect(state.menuBarText == "—% · 50%")
-    }
-
     // MARK: - Utilization & Color
 
     @Test func menuBarUtilizationWithNoUsage() {

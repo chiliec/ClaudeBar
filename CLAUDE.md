@@ -16,7 +16,7 @@ Three-layer: Views → `AppState` (`@Observable` class) → Services
 
 - `ClaudeAPIClient`: stateless. Usage/profile via `GET api.anthropic.com/api/oauth/{usage,profile}` with `Authorization: Bearer <token>` + `anthropic-beta: oauth-2025-04-20`
 - `OAuthService`: PKCE sign-in through the browser (client ID is Claude Code's), token refresh. `OAuthCallbackServer` is a one-shot `NWListener` on an OS-assigned ephemeral port (the authorize URL must match Claude Code CLI's byte-for-byte — see `authorizeURL`)
-- `AccountStore`: all accounts + the active pointer in one Keychain blob (`oauth_accounts`); a legacy single-credential `oauth_credentials` blob is migrated on first load. `AppState` polls the active account for full detail and every other account for its menu bar percentage only
+- `AccountStore`: all accounts + the active pointer in one Keychain blob (`oauth_accounts`); a legacy single-credential `oauth_credentials` blob is migrated on first load. `AppState` polls only the active account — switching accounts stops the old poll and starts a new one
 - Menu bar item and panel are hand-built in `AppDelegate`, not `MenuBarExtra` — the latter gives no control over panel placement, so it drifts sideways as the label's width changes. The panel's right edge is pinned to the status item's right edge
 - `KeychainService`: struct with injectable `serviceName`. Tests use `com.claudebar.test`.
 - **API quirk**: utilization returned 0–100; `WindowUsage` normalizes to 0–1.0 on decode (values > 1.0 divided by 100)
