@@ -6,6 +6,28 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.25</title>
+      <pubDate>Tue, 11 Aug 2026 07:06:40 +0000</pubDate>
+      <sparkle:version>0.0.25</sparkle:version>
+      <sparkle:shortVersionString>0.0.25</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Multiple accounts
+
+Sign in to more than one Claude.ai account and switch between them:
+
+- **Account switcher** in the popover header — click your email to change the
+  active account.
+- **Settings** lists every signed-in account with a per-account Remove button.
+- Existing sign-ins migrate automatically; no action needed.
+
+### Menu bar polish
+
+- The status item is narrower and the label is centered.
+- The panel no longer shifts or resizes while switching accounts or when the
+  percentage changes width.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.25/ClaudeBar.zip" sparkle:edSignature="db2zl/IPIyrFwMaUW7l+bRCQzko5t/r/och3tKKqrrAUhQcdnCAK7Gs2X6SlpeEim4BFSSOpGWesC0STW4u4CA==" length="3240919" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.24</title>
       <pubDate>Fri, 31 Jul 2026 20:57:44 +0000</pubDate>
       <sparkle:version>0.0.24</sparkle:version>
