@@ -145,7 +145,6 @@ struct UsageDetailView: View {
                     }
                     Text(verbatim: "\(Int(utilization * 100))%")
                         .font(.subheadline.bold())
-                        .bold()
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
             }

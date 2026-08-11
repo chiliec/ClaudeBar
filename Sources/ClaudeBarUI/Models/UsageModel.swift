@@ -470,7 +470,7 @@ public enum UsageColor {
     public var swiftUIColor: Color {
         switch self {
         case .green: return Color(red: 0.29, green: 0.87, blue: 0.50)   // #4ade80
-        case .yellow: return Color(red: 0.98, green: 0.80, blue: 0.08)  // #facc15
+        case .yellow: return Color(red: 0.85, green: 0.62, blue: 0.05)  // #d99e0d — deeper than #facc15 so the white % label reads on it
         case .orange: return Color(red: 0.83, green: 0.65, blue: 0.46)  // #D4A574
         case .red: return Color(red: 0.94, green: 0.27, blue: 0.27)     // #ef4444
         }
