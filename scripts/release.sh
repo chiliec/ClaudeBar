@@ -77,7 +77,9 @@ fi
 # AppcastTests.topmostItemMatchesInfoPlistVersion until we insert the new item).
 
 echo "==> Running tests"
-swift test 2>&1 | tail -3
+# --no-parallel: suites share the test Keychain service, parallel runs are flaky
+# (see CLAUDE.md Testing).
+swift test --no-parallel 2>&1 | tail -3
 
 # ---- Bump version in Info.plist --------------------------------------------
 
