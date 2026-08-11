@@ -6,6 +6,18 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.27</title>
+      <pubDate>Tue, 11 Aug 2026 07:59:50 +0000</pubDate>
+      <sparkle:version>0.0.27</sparkle:version>
+      <sparkle:shortVersionString>0.0.27</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Readable percentage on the 5-hour bar
+
+The yellow band of the 5-hour usage bar was bright enough that the white
+percentage sitting on it was hard to read. It's now a deeper gold.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.27/ClaudeBar.zip" sparkle:edSignature="YPj5RoSxVaamNy0DjHNga5y2mfmbMy6effTxaCJLIJj/UcbUP3VqAoJQUsBTNCq59NSXE88VF9OOq+XtlTV+DA==" length="3241868" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.26</title>
       <pubDate>Tue, 11 Aug 2026 07:33:17 +0000</pubDate>
       <sparkle:version>0.0.26</sparkle:version>
