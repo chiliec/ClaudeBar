@@ -94,8 +94,22 @@ public final class AppState {
         }
     }
 
-    private var activeAccount: Account? {
+    var activeAccount: Account? {
         accounts.first { $0.id == activeID }
+    }
+
+    /// Point the session at the (new) active account. Keeping stale usage leaves the
+    /// old numbers in place for the redacted mid-switch layout; clearing drops them.
+    private func resetSession(keepStaleUsage: Bool) {
+        credentials = activeAccount?.credentials
+        if keepStaleUsage {
+            isSwitchingAccount = true
+        } else {
+            usage = nil
+        }
+        organizationDetails = nil
+        lastUpdated = nil
+        error = nil
     }
 
     private func persistAccounts() throws {
@@ -125,13 +139,10 @@ public final class AppState {
     public func switchTo(id: String) {
         guard id != activeID, accounts.contains(where: { $0.id == id }) else { return }
         activeID = id
-        credentials = activeAccount?.credentials
-        // `usage` deliberately survives: it's the old account's, so it gets redacted
-        // rather than shown, but keeping the layout stops the panel resizing twice.
-        isSwitchingAccount = true
-        organizationDetails = nil
-        lastUpdated = nil
-        error = nil
+        // Stale usage deliberately survives: it's the old account's, so it gets
+        // redacted rather than shown, but keeping the layout stops the panel
+        // resizing twice.
+        resetSession(keepStaleUsage: true)
         try? persistAccounts()
         startPolling()      // fetches the newly active account immediately
     }
@@ -140,11 +151,7 @@ public final class AppState {
         accounts.removeAll { $0.id == id }
         if activeID == id {
             activeID = accounts.first?.id
-            credentials = activeAccount?.credentials
-            usage = nil
-            organizationDetails = nil
-            lastUpdated = nil
-            error = nil
+            resetSession(keepStaleUsage: false)
         }
         try? persistAccounts()
         if activeID == nil { stopPolling() } else { startPolling() }
