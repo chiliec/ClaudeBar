@@ -52,19 +52,18 @@ On the first launch after building, macOS will ask for your Keychain password to
 
 ## Setup
 
-1. Open [claude.ai](https://claude.ai) in your browser
-2. Open DevTools and find the `sessionKey` cookie:
-   - **Safari**: Develop -> Show Web Inspector -> Storage -> Cookies
-   - **Chrome / Arc / Brave**: DevTools (Cmd+Opt+I) -> Application -> Cookies
-   - **Firefox**: DevTools (Cmd+Opt+I) -> Storage -> Cookies
-3. Copy the `sessionKey` value
-4. Launch ClaudeBar and paste it in the setup screen
+1. Launch ClaudeBar and click **Sign in with Claude**
+2. Approve access in the browser tab that opens
+3. Come back — the menu bar starts showing your usage
+
+Optionally, to also see your prepaid API credit balance, paste a `sessionKey` from
+platform.claude.com in Settings → Platform API.
 
 ## Development
 
 ```bash
 ./scripts/run.sh          # build + sign + run
-swift test                # run all tests (65 tests)
+swift test                # run all tests
 swift test --filter AppStateTests  # run one test suite
 ```
 
@@ -83,9 +82,9 @@ iconutil -c icns .build/ClaudeBar.iconset -o Sources/Resources/AppIcon.icns
 
 ## How it works
 
-ClaudeBar reads usage data from `claude.ai/api/organizations/{org_id}/usage` using your session cookie. It does not use any unofficial or undocumented endpoints beyond what the Claude.ai web app itself uses.
-
-No data is sent anywhere except to `claude.ai`. Your session key never leaves your machine (stored in macOS Keychain).
+ClaudeBar signs in with OAuth (the same flow Claude Code uses) and reads usage from
+`api.anthropic.com/api/oauth/usage`. Tokens are stored in the macOS Keychain and
+refreshed automatically; nothing is sent anywhere except to Anthropic.
 
 ## License
 

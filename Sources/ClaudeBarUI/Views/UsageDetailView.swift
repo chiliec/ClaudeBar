@@ -41,6 +41,9 @@ struct UsageDetailView: View {
             }
             footer
         }
+        // Mid-switch the numbers still belong to the previous account, so hide their
+        // values while keeping their layout — the panel stays exactly as tall as it was.
+        .redacted(reason: state.isSwitchingAccount ? .placeholder : [])
     }
 
     private var header: some View {
@@ -77,45 +80,39 @@ struct UsageDetailView: View {
 
     @ViewBuilder
     private var headerTitle: some View {
-        let currentOrgName = state.orgId.flatMap { id in
-            state.organizations.first(where: { $0.uuid == id })?.displayName
-        }
-        if state.visibleOrganizations.count > 1, let name = currentOrgName {
-            Menu {
-                ForEach(state.visibleOrganizations.filter { $0.uuid != state.orgId }, id: \.uuid) { org in
-                    Button {
-                        Task { await state.switchOrganization(to: org) }
-                    } label: {
-                        Text(org.displayName)
+        let title = state.organizationDetails?.displayName
+            ?? state.activeAccount?.label
+        Menu {
+            ForEach(state.accounts) { account in
+                Button {
+                    state.switchTo(id: account.id)
+                } label: {
+                    if account.id == state.activeID {
+                        Label(account.label, systemImage: "checkmark")
+                    } else {
+                        Text(account.label)
                     }
                 }
-                Divider()
-                Button {
-                    state.showingSettings = true
-                } label: {
-                    Text("header.updateSessionKey", bundle: .module)
-                }
-                Button {
-                    state.showingSettings = true
-                } label: {
-                    Text("header.openSettings", bundle: .module)
-                }
+            }
+            if !state.accounts.isEmpty { Divider() }
+            Button {
+                Task { await state.signIn() }
             } label: {
-                HStack(spacing: 4) {
-                    Text(name)
-                        .font(.headline)
-                    Image(systemName: "chevron.down")
+                Text("action.addAccount", bundle: .module)
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(title ?? String(localized: "usage.title", bundle: .module))
+                    .font(.headline)
+                if state.accounts.count > 1 {
+                    Image(systemName: "chevron.up.chevron.down")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-        } else if let name = currentOrgName {
-            Text(name).font(.headline)
-        } else {
-            Text("usage.title", bundle: .module).font(.headline)
         }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
     }
 
     private func fiveHourSection(_ usage: UsageResponse) -> some View {

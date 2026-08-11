@@ -6,20 +6,18 @@ public struct SessionExpiredView: View {
     public init(state: AppState) { self.state = state }
 
     public var body: some View {
-        SessionKeyInputView(
+        SignInView(
             state: state,
             title: titleString,
             subtitle: String(localized: "session.expiredSubtitle", bundle: .module),
-            buttonLabel: String(localized: "action.reconnect", bundle: .module),
+            buttonLabel: String(localized: "action.signIn", bundle: .module),
             titleIcon: "exclamationmark.triangle",
-            titleColor: .orange,
-            submitAction: { [state] key in await state.updateSessionKey(key) }
+            titleColor: .orange
         )
     }
 
     private var titleString: String {
-        if let orgId = state.orgId,
-           let name = state.organizations.first(where: { $0.uuid == orgId })?.displayName {
+        if let name = state.organizationDetails?.displayName {
             return String(localized: "session.reconnect \(name)", bundle: .module)
         }
         return String(localized: "session.expired", bundle: .module)

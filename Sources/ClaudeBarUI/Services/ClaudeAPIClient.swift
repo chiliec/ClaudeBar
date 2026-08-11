@@ -1,48 +1,6 @@
 import Foundation
 
 public struct ClaudeAPIClient {
-    private static let baseURL = "https://claude.ai"
-
-    public let sessionKey: String
-    public let orgId: String
-
-    public init(sessionKey: String, orgId: String) {
-        self.sessionKey = sessionKey
-        self.orgId = orgId
-    }
-
-    // MARK: - Request Builders
-
-    public func buildUsageRequest() throws -> URLRequest {
-        guard let url = URL(string: "\(Self.baseURL)/api/organizations/\(orgId)/usage") else {
-            throw APIError.invalidURL
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("sessionKey=\(sessionKey)", forHTTPHeaderField: "Cookie")
-        return request
-    }
-
-    public static func buildOrganizationsRequest(sessionKey: String) throws -> URLRequest {
-        guard let url = URL(string: "\(baseURL)/api/organizations") else {
-            throw APIError.invalidURL
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("sessionKey=\(sessionKey)", forHTTPHeaderField: "Cookie")
-        return request
-    }
-
-    public func buildOrganizationDetailsRequest() throws -> URLRequest {
-        guard let url = URL(string: "\(Self.baseURL)/api/organizations/\(orgId)") else {
-            throw APIError.invalidURL
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("sessionKey=\(sessionKey)", forHTTPHeaderField: "Cookie")
-        return request
-    }
-
     // MARK: - Response Parsers
 
     public static func parseUsageResponse(data: Data) throws -> UsageResponse {
@@ -58,46 +16,6 @@ public struct ClaudeAPIClient {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot parse date: \(dateString)")
         }
         return try decoder.decode(UsageResponse.self, from: data)
-    }
-
-    public static func parseOrganizationsResponse(data: Data) throws -> [Organization] {
-        return try JSONDecoder().decode([Organization].self, from: data)
-    }
-
-    public static func parseOrganizationDetailsResponse(data: Data) throws -> OrganizationDetails {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .custom { decoder in
-            let container = try decoder.singleValueContainer()
-            let dateString = try container.decode(String.self)
-            let formatters = [ISO8601DateFormatter.withFractionalSeconds, ISO8601DateFormatter.standard]
-            for formatter in formatters {
-                if let date = formatter.date(from: dateString) { return date }
-            }
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot parse date: \(dateString)")
-        }
-        return try decoder.decode(OrganizationDetails.self, from: data)
-    }
-
-    // MARK: - Network Calls
-
-    public func fetchUsage() async throws -> UsageResponse {
-        let (data, response) = try await URLSession.shared.data(for: try buildUsageRequest())
-        try Self.validateHTTPResponse(response)
-        return try Self.parseUsageResponse(data: data)
-    }
-
-    public func fetchOrganizationDetails() async throws -> OrganizationDetails {
-        let (data, response) = try await URLSession.shared.data(for: try buildOrganizationDetailsRequest())
-        try Self.validateHTTPResponse(response)
-        return try Self.parseOrganizationDetailsResponse(data: data)
-    }
-
-    public static func fetchOrganizations(sessionKey: String) async throws -> [Organization] {
-        let request = try buildOrganizationsRequest(sessionKey: sessionKey)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        try validateHTTPResponse(response)
-        return try parseOrganizationsResponse(data: data)
     }
 
     static func validateHTTPResponse(_ response: URLResponse) throws {
@@ -143,6 +61,79 @@ extension ISO8601DateFormatter {
         f.formatOptions = [.withInternetDateTime]
         return f
     }()
+}
+
+// MARK: - OAuth data endpoints (api.anthropic.com)
+
+public struct AccountIdentity: Equatable {
+    public let uuid: String
+    public let email: String
+    public init(uuid: String, email: String) { self.uuid = uuid; self.email = email }
+}
+
+public struct ProfileResult: Equatable {
+    public let account: AccountIdentity
+    public let organization: OrganizationDetails
+    public init(account: AccountIdentity, organization: OrganizationDetails) {
+        self.account = account
+        self.organization = organization
+    }
+}
+
+extension ClaudeAPIClient {
+    private static let oauthBaseURL = "https://api.anthropic.com"
+    private static let oauthBetaHeader = "oauth-2025-04-20"
+
+    public static func buildOAuthRequest(path: String, accessToken: String) throws -> URLRequest {
+        guard let url = URL(string: "\(oauthBaseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(oauthBetaHeader, forHTTPHeaderField: "anthropic-beta")
+        return request
+    }
+
+    /// Maps `/api/oauth/profile` onto the existing `OrganizationDetails` so the
+    /// tier pill and header name keep working unchanged.
+    public static func parseProfileResponse(data: Data) throws -> ProfileResult {
+        struct Envelope: Decodable {
+            struct Account: Decodable { let uuid: String; let email: String }
+            struct Org: Decodable {
+                let uuid: String
+                let name: String
+                let rateLimitTier: String?
+            }
+            let account: Account
+            let organization: Org
+        }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let envelope = try decoder.decode(Envelope.self, from: data)
+        return ProfileResult(
+            account: AccountIdentity(uuid: envelope.account.uuid, email: envelope.account.email),
+            organization: OrganizationDetails(
+                uuid: envelope.organization.uuid,
+                name: envelope.organization.name,
+                rateLimitTier: envelope.organization.rateLimitTier
+            )
+        )
+    }
+
+    public static func fetchOAuthUsage(accessToken: String) async throws -> UsageResponse {
+        let request = try buildOAuthRequest(path: "/api/oauth/usage", accessToken: accessToken)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateHTTPResponse(response)
+        return try parseUsageResponse(data: data)
+    }
+
+    public static func fetchOAuthProfile(accessToken: String) async throws -> ProfileResult {
+        let request = try buildOAuthRequest(path: "/api/oauth/profile", accessToken: accessToken)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateHTTPResponse(response)
+        return try parseProfileResponse(data: data)
+    }
 }
 
 // MARK: - platform.claude.com (prepaid API credits)

@@ -343,7 +343,7 @@ public struct Organization: Codable, Equatable {
     }
 }
 
-public struct OrganizationDetails: Codable {
+public struct OrganizationDetails: Codable, Equatable {
     public let uuid: String
     public let name: String
     public let rateLimitTier: String?
@@ -368,6 +368,16 @@ public struct OrganizationDetails: Codable {
     }
 
     public var tier: SubscriptionTier { .from(rateLimitTier: rateLimitTier, capabilities: capabilities) }
+
+    /// Strips the default `'s Organization` suffix Claude.ai assigns to
+    /// personal orgs (e.g. `Vladimir's Organization` → `Vladimir`).
+    public var displayName: String {
+        let suffix = "'s Organization"
+        if name.hasSuffix(suffix) {
+            return String(name.dropLast(suffix.count))
+        }
+        return name
+    }
 }
 
 public struct PlatformCredits: Codable, Equatable {

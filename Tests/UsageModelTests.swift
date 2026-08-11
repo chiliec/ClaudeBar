@@ -304,7 +304,9 @@ struct UsageModelTests {
         }
         """.data(using: .utf8)!
 
-        let details = try ClaudeAPIClient.parseOrganizationDetailsResponse(data: json)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let details = try decoder.decode(OrganizationDetails.self, from: json)
 
         #expect(details.uuid == "4f4dee87-d910-4390-ae54-b64ad23b9243")
         #expect(details.rateLimitTier == "default_claude_max_5x")
