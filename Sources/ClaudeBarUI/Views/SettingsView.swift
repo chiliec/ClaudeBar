@@ -211,7 +211,7 @@ public struct SettingsView: View {
             Circle()
                 .fill(state.isAuthenticated ? .green : .red)
                 .frame(width: 8, height: 8)
-            if state.isAuthenticated, let orgName = state.organizationDetails?.name {
+            if state.isAuthenticated, let orgName = state.organizationDetails?.displayName {
                 Text("settings.connectedAs \(orgName)", bundle: .module)
                     .font(.subheadline)
             } else if state.isAuthenticated {

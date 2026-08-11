@@ -17,7 +17,7 @@ public struct SessionExpiredView: View {
     }
 
     private var titleString: String {
-        if let name = state.organizationDetails?.name {
+        if let name = state.organizationDetails?.displayName {
             return String(localized: "session.reconnect \(name)", bundle: .module)
         }
         return String(localized: "session.expired", bundle: .module)

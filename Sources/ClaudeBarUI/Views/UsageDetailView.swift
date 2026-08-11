@@ -77,7 +77,7 @@ struct UsageDetailView: View {
 
     @ViewBuilder
     private var headerTitle: some View {
-        let title = state.organizationDetails?.name
+        let title = state.organizationDetails?.displayName
             ?? state.accounts.first { $0.id == state.activeID }?.label
         Menu {
             ForEach(state.accounts) { account in
