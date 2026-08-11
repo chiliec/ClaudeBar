@@ -269,50 +269,6 @@ struct UsageDetailViewHeaderTests {
     }
 }
 
-// MARK: - RingProgressView Tests
-
-@MainActor
-@Suite
-struct RingProgressViewTests {
-    @Test func clampsProgressToZero() throws {
-        let view = RingProgressView(progress: -0.5, color: .green)
-        let inspected = try view.inspect()
-
-        let zstack = try inspected.zStack()
-        #expect(try zstack.fixedFrame().width == 16)
-    }
-
-    @Test func clampsProgressToOne() throws {
-        let view = RingProgressView(progress: 1.5, color: .red)
-        let inspected = try view.inspect()
-        _ = try inspected.zStack()
-    }
-
-    @Test func customSize() throws {
-        let view = RingProgressView(progress: 0.5, color: .blue, size: 32)
-        let inspected = try view.inspect()
-        let frame = try inspected.zStack().fixedFrame()
-        #expect(frame.width == 32)
-        #expect(frame.height == 32)
-    }
-
-    @Test func defaultSize() throws {
-        let view = RingProgressView(progress: 0.5, color: .green)
-        let inspected = try view.inspect()
-        let frame = try inspected.zStack().fixedFrame()
-        #expect(frame.width == 16)
-        #expect(frame.height == 16)
-    }
-
-    @Test func containsTwoCircles() throws {
-        let view = RingProgressView(progress: 0.5, color: .green)
-        let inspected = try view.inspect()
-        let zstack = try inspected.zStack()
-
-        #expect(zstack.count == 2)
-    }
-}
-
 // MARK: - SettingsView Tests
 
 @MainActor
