@@ -15,8 +15,8 @@ struct ClaudeBarApp: App {
 
 /// Hosts the menu bar item and its panel by hand instead of using `MenuBarExtra`:
 /// `MenuBarExtra` gives no control over where the panel lands, so it drifts sideways
-/// whenever anything about the item changes. Here the panel's right edge is pinned to
-/// the status item's right edge, which macOS keeps fixed (items grow leftward).
+/// whenever anything about the item changes. Here the panel hangs from the item's
+/// left edge, and the item is given a fixed width so that edge never moves.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let appState = AppState()
@@ -39,7 +39,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func makeStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         guard let button = statusItem.button else { return }
-        button.font = .monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
+        button.font = font
+        // Fixed width, not variableLength: menu bar items grow leftward, so an item
+        // that resizes between "9%" and "100%" moves its own left edge — and the panel
+        // hanging off it. Measured from the widest label rather than guessed, so the
+        // item is exactly as wide as it needs to be.
+        statusItem.length = ("100%" as NSString).size(withAttributes: [.font: font]).width + 4
+        button.alignment = .center
         button.target = self
         button.action = #selector(togglePanel)
         observeLabel()
@@ -81,12 +88,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
+        panel.animationBehavior = .none
         panel.delegate = self
 
         let controller = NSHostingController(
             rootView: PopoverView(state: appState, updater: updater)
                 .background(PanelBackground())
                 .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                // A status popover should snap, not animate: implicit animations here
+                // turn every refresh and account switch into a visible wobble, and the
+                // window resizes along with the content.
+                .transaction { $0.animation = nil }
         )
         // Let the window follow the content's height: the popover swaps between usage,
         // settings and error views, which are all different sizes.
@@ -142,6 +154,10 @@ extension AppDelegate: NSWindowDelegate {
 
     /// Resizing keeps the bottom-left origin, which would grow the panel up into the
     /// menu bar — re-pin it to the status item instead.
+    ///
+    /// Only move the panel here, never resize it: the hosting controller owns the
+    /// window's size, and setting a size it disagrees with recurses until the stack
+    /// overflows. Content that shouldn't change height is handled in the views.
     func windowDidResize(_ notification: Notification) {
         guard panel.isVisible else { return }
         positionPanel()
