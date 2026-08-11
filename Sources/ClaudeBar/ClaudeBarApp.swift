@@ -45,7 +45,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // that resizes between "9%" and "100%" moves its own left edge — and the panel
         // hanging off it. Measured from the widest label rather than guessed, so the
         // item is exactly as wide as it needs to be.
-        statusItem.length = ("100%" as NSString).size(withAttributes: [.font: font]).width + 4
+        // "100%" is the widest possible label (utilization is capped), so its width
+        // IS the slot — no extra padding; shorter labels center in the slack.
+        statusItem.length = ("100%" as NSString).size(withAttributes: [.font: font]).width
         button.alignment = .center
         button.target = self
         button.action = #selector(togglePanel)
