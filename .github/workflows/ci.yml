@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  XCODE_APP: /Applications/Xcode_26.4.app
+
+jobs:
+  test:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        run: sudo xcode-select -s "$XCODE_APP"
+      - name: Run tests
+        run: swift test --no-parallel
