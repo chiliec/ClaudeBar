@@ -9,7 +9,8 @@ public struct SettingsView: View {
     @State private var platformPasteDraft: String = ""
     @State private var platformPasteError: String?
 
-    public init(state: AppState, license: LicenseStore, updater: SparkleUpdater? = nil) {
+    @MainActor
+    public init(state: AppState, license: LicenseStore = LicenseStore(), updater: SparkleUpdater? = nil) {
         self.state = state
         self.license = license
         self.updater = updater
