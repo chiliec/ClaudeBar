@@ -130,11 +130,3 @@ public struct LicenseService: LicenseServicing {
             ?? ISO8601DateFormatter.withFractionalSeconds.date(from: s)
     }
 }
-
-extension ISO8601DateFormatter {
-    static let withFractionalSeconds: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-}
