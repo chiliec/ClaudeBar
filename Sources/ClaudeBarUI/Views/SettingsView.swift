@@ -9,7 +9,7 @@ public struct SettingsView: View {
     @State private var platformPasteDraft: String = ""
     @State private var platformPasteError: String?
 
-    public init(state: AppState, license: LicenseStore = LicenseStore(), updater: SparkleUpdater? = nil) {
+    public init(state: AppState, license: LicenseStore, updater: SparkleUpdater? = nil) {
         self.state = state
         self.license = license
         self.updater = updater
@@ -259,9 +259,9 @@ struct LaunchAtLoginToggle: View {
         expiresAt: Date().addingTimeInterval(3600)
     )
     state.organizationDetails = OrganizationDetails(uuid: "fake-org", name: "Acme Inc", rateLimitTier: "default_claude_max_5x")
-    return SettingsView(state: state)
+    return SettingsView(state: state, license: LicenseStore())
 }
 
 #Preview("Settings - Disconnected") {
-    SettingsView(state: AppState(keychain: KeychainService(serviceName: "com.claudebar.preview")))
+    SettingsView(state: AppState(keychain: KeychainService(serviceName: "com.claudebar.preview")), license: LicenseStore())
 }

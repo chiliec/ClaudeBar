@@ -5,7 +5,7 @@ public struct PopoverView: View {
     private let license: LicenseStore
     private let updater: SparkleUpdater?
 
-    public init(state: AppState, license: LicenseStore = LicenseStore(), updater: SparkleUpdater? = nil) {
+    public init(state: AppState, license: LicenseStore, updater: SparkleUpdater? = nil) {
         self.state = state
         self.license = license
         self.updater = updater
@@ -71,13 +71,13 @@ private extension AppState {
 }
 
 #Preview("Usage Detail") {
-    PopoverView(state: .previewWithUsage)
+    PopoverView(state: .previewWithUsage, license: LicenseStore())
 }
 
 #Preview("Setup") {
-    PopoverView(state: .previewNotAuthenticated)
+    PopoverView(state: .previewNotAuthenticated, license: LicenseStore())
 }
 
 #Preview("Session Expired") {
-    PopoverView(state: .previewSessionExpired)
+    PopoverView(state: .previewSessionExpired, license: LicenseStore())
 }

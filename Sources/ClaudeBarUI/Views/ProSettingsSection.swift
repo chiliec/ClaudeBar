@@ -42,7 +42,7 @@ public struct ProSettingsSection: View {
                 if let message = license.message {
                     Text(message)
                         .font(.caption)
-                        .foregroundStyle(license.isPro ? .secondary : .red)
+                        .foregroundStyle(license.isPro ? Color.secondary : Color.red)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
