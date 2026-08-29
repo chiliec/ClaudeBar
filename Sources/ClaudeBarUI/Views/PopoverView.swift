@@ -2,17 +2,19 @@ import SwiftUI
 
 public struct PopoverView: View {
     @Bindable public var state: AppState
+    private let license: LicenseStore
     private let updater: SparkleUpdater?
 
-    public init(state: AppState, updater: SparkleUpdater? = nil) {
+    public init(state: AppState, license: LicenseStore = LicenseStore(), updater: SparkleUpdater? = nil) {
         self.state = state
+        self.license = license
         self.updater = updater
     }
 
     public var body: some View {
         VStack(spacing: 0) {
             if state.showingSettings {
-                SettingsView(state: state, updater: updater)
+                SettingsView(state: state, license: license, updater: updater)
             } else if state.error == .sessionExpired {
                 // Session-expired routing must precede !isAuthenticated:
                 // handleSessionExpired nils the credentials, so isAuthenticated is

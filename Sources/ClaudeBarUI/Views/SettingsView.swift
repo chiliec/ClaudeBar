@@ -3,13 +3,15 @@ import ServiceManagement
 
 public struct SettingsView: View {
     @Bindable public var state: AppState
+    @Bindable public var license: LicenseStore
     private let updater: SparkleUpdater?
 
     @State private var platformPasteDraft: String = ""
     @State private var platformPasteError: String?
 
-    public init(state: AppState, updater: SparkleUpdater? = nil) {
+    public init(state: AppState, license: LicenseStore = LicenseStore(), updater: SparkleUpdater? = nil) {
         self.state = state
+        self.license = license
         self.updater = updater
     }
 
@@ -32,6 +34,7 @@ public struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     sessionGroup
                     platformAPISection
+                    ProSettingsSection(license: license)
 
                     // Launch at login
                     GroupBox {

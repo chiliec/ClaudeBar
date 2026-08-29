@@ -72,3 +72,12 @@
 "oauthError.stateMismatch" = "Sign-in couldn't be verified. Try again.";
 "oauthError.denied" = "Sign-in was cancelled.";
 "oauthError.tokenExchangeFailed %lld" = "Sign-in failed (HTTP %lld). Try again.";
+"settings.pro" = "ClaudeBar Pro";
+"settings.pro.active" = "Pro — active";
+"settings.pro.free" = "Free";
+"settings.pro.grace" = "Verified offline. Reconnect within 14 days to keep Pro.";
+"settings.pro.upgrade %@" = "Upgrade to Pro — %@";
+"settings.pro.enterKey" = "Already bought? Paste your license key:";
+"settings.pro.keyPlaceholder" = "License key";
+"settings.pro.activate" = "Activate";
+"settings.pro.deactivate" = "Deactivate this Mac";
