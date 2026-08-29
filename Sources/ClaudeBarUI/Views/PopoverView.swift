@@ -6,9 +6,9 @@ public struct PopoverView: View {
     private let updater: SparkleUpdater?
 
     @MainActor
-    public init(state: AppState, license: LicenseStore = LicenseStore(), updater: SparkleUpdater? = nil) {
+    public init(state: AppState, license: LicenseStore? = nil, updater: SparkleUpdater? = nil) {
         self.state = state
-        self.license = license
+        self.license = license ?? LicenseStore()
         self.updater = updater
     }
 
