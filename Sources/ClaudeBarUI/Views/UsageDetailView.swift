@@ -71,11 +71,8 @@ struct UsageDetailView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
 
-        // Not .glassEffect() on macOS 26: resolving it inside this panel segfaults
-        // the main thread in DesignLibrary, under
-        // GlassEffectContextResolvedData.updateValue() -> MaterialProviderBox
-        // .resolveLayers(in:). Crashes only once signed in, since that is when the
-        // pill first renders. A capsule looks the same at this size anyway.
+        // A capsule, not .glassEffect() -- see ButtonModifiers.swift for why this
+        // app uses no Liquid Glass at all.
         label.background(.quaternary).clipShape(Capsule())
     }
 
@@ -365,18 +362,10 @@ struct UsageDetailView: View {
 
 }
 
-// MARK: - Liquid Glass Modifiers
-
 private struct FooterButtonModifier: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            content
-                .foregroundStyle(.blue)
-                .buttonStyle(.glass)
-        } else {
-            content
-                .foregroundStyle(.blue)
-                .buttonStyle(.plain)
-        }
+        content
+            .foregroundStyle(.blue)
+            .buttonStyle(.plain)
     }
 }
