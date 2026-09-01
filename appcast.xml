@@ -6,6 +6,27 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.30</title>
+      <pubDate>Tue, 01 Sep 2026 05:09:00 +0000</pubDate>
+      <sparkle:version>0.0.30</sparkle:version>
+      <sparkle:shortVersionString>0.0.30</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Fixes a crash on launch that affected every machine but the developer's
+
+ClaudeBar shipped without the bundle holding its interface text. Every label in
+the app is loaded from it, so the app trapped and quit the instant it drew
+anything — no menu bar icon, no window, no error. On the machine the releases
+were built from it kept working, because older build tooling wrote an absolute
+path to the build directory into the binary as a fallback, and that directory
+was right there. Nobody else had it.
+
+0.0.29's packaging fixes were real but could not help on their own: the app got
+past Gatekeeper and then crashed a moment later. Releases are now smoke tested
+by launching the built app from outside the build directory and requiring it to
+survive, which is the check that would have caught this.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.30/ClaudeBar.zip" sparkle:edSignature="RTSIlmEHEViPjSQ3OXE3tGROzzjbRBCV1xUvTF46/C5qxGeolGuiVYMYWzC67FzC1s2MngJsjV+9YtoG5ixpBg==" length="3632574" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.29</title>
       <pubDate>Tue, 01 Sep 2026 04:49:50 +0000</pubDate>
       <sparkle:version>0.0.29</sparkle:version>
