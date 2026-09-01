@@ -203,7 +203,17 @@ echo "==> Committing release in ClaudeBar repo"
 git add Sources/ClaudeBar/Info.plist "$APPCAST_FILE"
 git diff --cached --quiet || git commit -m "release: v$VERSION"
 git tag -f "v$VERSION"
-git push origin main --tags --force
+# Push the branch WITHOUT --force. Forcing it here silently destroyed a merged
+# PR during the v0.0.29 release: anything landed on the remote since the last
+# release is not in this checkout, and --force discards it. Only the tag needs
+# forcing, so that re-running a failed release at the same version works.
+if ! git push origin main; then
+    echo "ERROR: pushing main was rejected -- the remote has commits this"
+    echo "  checkout does not. Run 'git pull --rebase origin main' and re-run"
+    echo "  this script; it is safe to re-run at the same version."
+    exit 1
+fi
+git push origin --tags --force
 
 # ---- GitHub release --------------------------------------------------------
 
