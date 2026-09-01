@@ -6,6 +6,27 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.29</title>
+      <pubDate>Tue, 01 Sep 2026 04:49:50 +0000</pubDate>
+      <sparkle:version>0.0.29</sparkle:version>
+      <sparkle:shortVersionString>0.0.29</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### The app now launches for everyone
+
+Builds through 0.0.28 were missing a bundle type declaration, so macOS did not
+recognize ClaudeBar as an application and quietly refused to launch it whenever
+the copy carried a quarantine flag — which is every copy downloaded from the
+releases page. Nothing appeared, and because ClaudeBar has no Dock icon or
+window, there was nothing to indicate why. Fixed.
+
+Builds are also universal again: 0.0.28 shipped Apple Silicon only and could
+not run on Intel Macs at all.
+
+If a previous download never started for you, replace it with this build —
+a copy that never launched could not update itself.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.29/ClaudeBar.zip" sparkle:edSignature="6C3jXlksDYDZZmTZ1B8t9ihl+dulkwA/TaWZ5jMNlfotu7dSfvaNEbc/4M9XFp5HefUoq533QplfRdMFA+QvBQ==" length="3621964" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.28</title>
       <pubDate>Tue, 11 Aug 2026 10:44:46 +0000</pubDate>
       <sparkle:version>0.0.28</sparkle:version>
