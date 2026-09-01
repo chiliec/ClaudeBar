@@ -15,9 +15,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleVersion</key>
-    <string>0.0.34</string>
+    <string>0.0.35</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.0.34</string>
+    <string>0.0.35</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>LSUIElement</key>
