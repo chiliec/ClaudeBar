@@ -18,6 +18,11 @@ mkdir -p "$BUNDLE_DIR/Contents/Resources"
 cp "$BUILD_DIR/$APP_NAME" "$BUNDLE_DIR/Contents/MacOS/"
 cp Sources/ClaudeBar/Info.plist "$BUNDLE_DIR/Contents/"
 cp Sources/Resources/AppIcon.icns "$BUNDLE_DIR/Contents/Resources/"
+# ClaudeBarUI's localized strings. Bundle.module looks for this beside the other
+# resources; without it every `Text(..., bundle: .module)` traps at render time,
+# so the app crashes the moment the popover lays out. Must land before signing.
+ditto "$BUILD_DIR/${APP_NAME}_ClaudeBarUI.bundle" \
+      "$BUNDLE_DIR/Contents/Resources/${APP_NAME}_ClaudeBarUI.bundle"
 
 # Bundle Sparkle.framework if present (SwiftPM dependency)
 if [ -d "$BUILD_DIR/Sparkle.framework" ]; then

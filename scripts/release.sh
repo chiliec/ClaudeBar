@@ -102,6 +102,13 @@ mkdir -p "$BUNDLE_DIR/Contents/Frameworks"
 cp "$BUILD_DIR/$APP_NAME" "$BUNDLE_DIR/Contents/MacOS/"
 cp Sources/ClaudeBar/Info.plist "$BUNDLE_DIR/Contents/"
 cp Sources/Resources/AppIcon.icns "$BUNDLE_DIR/Contents/Resources/"
+# ClaudeBarUI's localized strings. Bundle.module looks for this beside the other
+# resources; without it every `Text(..., bundle: .module)` traps at render time,
+# so the app crashes the moment the popover lays out. Shipped through v0.0.29,
+# which only ran on the build machine because older SwiftPM baked an absolute
+# fallback path into .build. Must land before signing.
+ditto "$BUILD_DIR/${APP_NAME}_ClaudeBarUI.bundle" \
+      "$BUNDLE_DIR/Contents/Resources/${APP_NAME}_ClaudeBarUI.bundle"
 ditto "$BUILD_DIR/Sparkle.framework" "$BUNDLE_DIR/Contents/Frameworks/Sparkle.framework"
 
 # SwiftPM-built binaries don't include @executable_path/../Frameworks in their
@@ -112,6 +119,31 @@ install_name_tool -add_rpath "@executable_path/../Frameworks" "$BUNDLE_DIR/Conte
 echo "==> Signing Sparkle.framework internals + app"
 sign_bundle "$BUNDLE_DIR" "$SIGN_IDENTITY" release
 verify_bundle "$BUNDLE_DIR"
+
+# ---- Smoke test: does the thing actually run? -------------------------------
+# Every check below this point is static, and static checks shipped three
+# broken releases in a row -- the last one crashed on launch for everyone
+# except this machine. Run the bundle we just built from a copy outside the
+# package directory, so nothing in .build can satisfy it by accident, and
+# require it to survive. `open` rather than exec'ing the binary: an accessory
+# app needs a real launch to build its status item and lay out its panel, which
+# is where a missing resource bundle traps.
+
+echo "==> Smoke testing the built app"
+SMOKE_DIR=$(mktemp -d)
+ditto "$BUNDLE_DIR" "$SMOKE_DIR/$APP_NAME.app"
+open -n "$SMOKE_DIR/$APP_NAME.app"
+sleep 8
+SMOKE_PID=$(pgrep -f "$SMOKE_DIR/$APP_NAME.app/Contents/MacOS/$APP_NAME" || true)
+if [ -z "$SMOKE_PID" ]; then
+    echo "ERROR: the app did not survive 8 seconds after launch."
+    echo "  Most recent crash report:"
+    ls -t "$HOME/Library/Logs/DiagnosticReports/$APP_NAME"-*.ips 2>/dev/null \
+        | head -1 | xargs -I{} sh -c 'grep -o "Fatal error:.*" "{}" | head -1'
+    exit 1
+fi
+kill "$SMOKE_PID"
+rm -rf "$SMOKE_DIR"
 
 echo "==> Notarizing"
 NOTARY_PROFILE="$NOTARY_PROFILE" ./scripts/notarize.sh "$BUNDLE_DIR"
