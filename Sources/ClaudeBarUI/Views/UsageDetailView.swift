@@ -71,11 +71,12 @@ struct UsageDetailView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
 
-        if #available(macOS 26.0, *) {
-            label.glassEffect()
-        } else {
-            label.background(.quaternary).clipShape(Capsule())
-        }
+        // Not .glassEffect() on macOS 26: resolving it inside this panel segfaults
+        // the main thread in DesignLibrary, under
+        // GlassEffectContextResolvedData.updateValue() -> MaterialProviderBox
+        // .resolveLayers(in:). Crashes only once signed in, since that is when the
+        // pill first renders. A capsule looks the same at this size anyway.
+        label.background(.quaternary).clipShape(Capsule())
     }
 
     @ViewBuilder

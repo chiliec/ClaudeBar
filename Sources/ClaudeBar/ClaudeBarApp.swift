@@ -20,7 +20,12 @@ struct ClaudeBarApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let appState = AppState()
-    private let updater = SparkleUpdater()
+    /// Sparkle needs a real .app bundle -- Info.plist for SUFeedURL, and the
+    /// framework's Updater.app to hand off to. `scripts/run.sh` runs the bare
+    /// binary in `.build/debug`, where a check fails with "verify you have the
+    /// latest version of debug". Nil there hides the button entirely.
+    private let updater: SparkleUpdater? =
+        Bundle.main.bundleURL.pathExtension == "app" ? SparkleUpdater() : nil
 
     private var statusItem: NSStatusItem!
     private var panel: NSPanel!
