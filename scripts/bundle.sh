@@ -17,12 +17,17 @@ mkdir -p "$BUNDLE_DIR/Contents/Resources"
 
 cp "$BUILD_DIR/$APP_NAME" "$BUNDLE_DIR/Contents/MacOS/"
 cp Sources/ClaudeBar/Info.plist "$BUNDLE_DIR/Contents/"
-# This bundle is for local testing, so point it at the dev keychain service. It
+# This bundle is for local testing, so point it at a test keychain service. It
 # builds in release configuration, so KeychainService's #if DEBUG arm can't see
 # it -- the key is how it finds out. release.sh deliberately never sets this, so
 # a shipped build falls back to the production service.
+#
+# Its own service, not run.sh's com.claudebar.dev: this bundle is signed with
+# Developer ID and run.sh's bare binary with Apple Development, and a login
+# keychain item's ACL is bound to the signing identity. Sharing one item means
+# macOS prompts for the keychain password on every switch between the two.
 /usr/libexec/PlistBuddy -c \
-    "Add :ClaudeBarKeychainService string com.claudebar.dev" \
+    "Add :ClaudeBarKeychainService string com.claudebar.bundle" \
     "$BUNDLE_DIR/Contents/Info.plist"
 cp Sources/Resources/AppIcon.icns "$BUNDLE_DIR/Contents/Resources/"
 # ClaudeBarUI's localized strings. Bundle.module looks for this beside the other

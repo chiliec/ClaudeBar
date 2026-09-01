@@ -18,7 +18,9 @@ public struct KeychainService: KeychainServicing {
     /// login-keychain item's ACL is bound to the signing identity -- sharing one
     /// item means macOS prompts for the keychain password on every switch
     /// between a dev build and the installed app, on top of the risk of a
-    /// half-finished change corrupting live credentials.
+    /// half-finished change corrupting live credentials. For the same reason
+    /// run.sh and bundle.sh get a service each: those two are signed differently
+    /// from each other as well.
     ///
     /// `isDebug` covers `scripts/run.sh`, which runs a bare debug binary with no
     /// Info.plist. `override` covers `scripts/bundle.sh`, which builds in release
