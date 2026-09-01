@@ -6,6 +6,28 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.33</title>
+      <pubDate>Tue, 01 Sep 2026 07:08:51 +0000</pubDate>
+      <sparkle:version>0.0.33</sparkle:version>
+      <sparkle:shortVersionString>0.0.33</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Fixes the crash at the end of signing in
+
+Approving access in the browser sent you back to ClaudeBar, which then crashed
+before it could save anything — so signing in could never complete, and the app
+returned to its setup screen every time.
+
+The panel's translucent background was drawn by an AppKit view embedded in the
+SwiftUI layout. Positioning it ran the auto layout engine on every frame from
+inside the layout pass, and the moment the panel changed height — which is what
+finishing sign-in does, swapping the short setup view for the tall usage view —
+that ran the main thread out of stack.
+
+The background is now drawn behind the interface rather than inside it, so it is
+positioned once instead of on every frame.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.33/ClaudeBar.zip" sparkle:edSignature="dFYZmn0oHw1SrmImPYUN9eMftw6Ec5XlW1S05Ul4uzKFbSwCYC6cqpjyXiiufXHV2gY2erIrR/z5NneTCJ7PCA==" length="3621197" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.32</title>
       <pubDate>Tue, 01 Sep 2026 06:46:56 +0000</pubDate>
       <sparkle:version>0.0.32</sparkle:version>
