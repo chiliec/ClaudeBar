@@ -6,6 +6,24 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.31</title>
+      <pubDate>Tue, 01 Sep 2026 06:17:04 +0000</pubDate>
+      <sparkle:version>0.0.31</sparkle:version>
+      <sparkle:shortVersionString>0.0.31</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Fixes a crash when opening the panel on macOS 26
+
+The subscription tier badge next to your organisation's name was drawn with the
+new Liquid Glass effect. Resolving that effect inside ClaudeBar's panel crashed
+the app outright on macOS 26. It only ever happened once signed in, since that
+is when the badge first appears — so a fresh install looked fine and then died
+the moment it had something to show.
+
+The badge is now a plain capsule on every macOS version. At that size it looks
+much the same.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.31/ClaudeBar.zip" sparkle:edSignature="lwGcMaK7AiajDa3z7o5e8x8ABOB4HsbLvfTC17cKacKBZjcISXG65OrwMIY8ymG977nvCRPz1qBS8q/Rm2/SDA==" length="3630147" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.30</title>
       <pubDate>Tue, 01 Sep 2026 05:09:00 +0000</pubDate>
       <sparkle:version>0.0.30</sparkle:version>
