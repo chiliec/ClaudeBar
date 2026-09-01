@@ -2,11 +2,13 @@
 set -e
 
 APP_NAME="ClaudeBar"
-BUILD_DIR=".build/release"
+# Universal build: SwiftPM puts multi-arch output under .build/apple/Products,
+# not .build/release. Intel Macs can't launch an arm64-only binary at all.
+BUILD_DIR=".build/apple/Products/Release"
 BUNDLE_DIR="$BUILD_DIR/$APP_NAME.app"
 
-echo "Building release..."
-swift build -c release
+echo "Building release (universal)..."
+swift build -c release --arch arm64 --arch x86_64
 
 echo "Creating app bundle..."
 rm -rf "$BUNDLE_DIR"

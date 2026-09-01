@@ -8,6 +8,12 @@
     <string>com.claudebar.app</string>
     <key>CFBundleName</key>
     <string>ClaudeBar</string>
+    <!-- Without this Gatekeeper reports "the code is valid but does not seem to
+         be an app" and refuses to launch a quarantined copy, however well the
+         bundle is signed and notarized. SwiftPM writes no Info.plist, so nothing
+         supplies it for us. -->
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
     <key>CFBundleVersion</key>
     <string>0.0.28</string>
     <key>CFBundleShortVersionString</key>

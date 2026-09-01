@@ -12,7 +12,9 @@ if [ -n "$CHANGES_FILE" ] && [ ! -f "$CHANGES_FILE" ]; then
 fi
 
 APP_NAME="ClaudeBar"
-BUILD_DIR=".build/release"
+# Universal build: SwiftPM puts multi-arch output under .build/apple/Products,
+# not .build/release. Intel Macs can't launch an arm64-only binary at all.
+BUILD_DIR=".build/apple/Products/Release"
 BUNDLE_DIR="$BUILD_DIR/$APP_NAME.app"
 ZIP_FILE="$BUILD_DIR/$APP_NAME.zip"
 # shellcheck source=lib/sign.sh
@@ -89,8 +91,8 @@ sed -i '' "s/<string>[0-9]*\.[0-9]*\.[0-9]*<\/string>/<string>$VERSION<\/string>
 
 # ---- Build, sign, bundle ---------------------------------------------------
 
-echo "==> Building release"
-swift build -c release
+echo "==> Building release (universal)"
+swift build -c release --arch arm64 --arch x86_64
 
 echo "==> Creating app bundle"
 rm -rf "$BUNDLE_DIR"
@@ -113,6 +115,31 @@ verify_bundle "$BUNDLE_DIR"
 
 echo "==> Notarizing"
 NOTARY_PROFILE="$NOTARY_PROFILE" ./scripts/notarize.sh "$BUNDLE_DIR"
+
+# ---- Gate on what a *user's* Mac will decide -------------------------------
+# codesign --verify only proves the signature is well formed. It said "valid on
+# disk" for every build through v0.0.28, which shipped without
+# CFBundlePackageType and so was refused by Gatekeeper on any machine that saw
+# it quarantined. spctl runs the assessment a user's Mac actually runs, and the
+# lipo check catches an arm64-only build that Intel Macs cannot launch at all.
+# Both are release-only: they need the stapled, Developer ID-signed bundle.
+
+echo "==> Verifying Gatekeeper assessment"
+if ! spctl -a -vvv -t exec "$BUNDLE_DIR" 2>&1 | grep -q "accepted"; then
+    echo "ERROR: Gatekeeper rejects the notarized bundle -- users would see it"
+    echo "  fail to launch. Full assessment:"
+    spctl -a -vvv -t exec "$BUNDLE_DIR" 2>&1 | sed 's/^/    /'
+    exit 1
+fi
+
+echo "==> Verifying universal binary"
+ARCHS=$(lipo -archs "$BUNDLE_DIR/Contents/MacOS/$APP_NAME")
+for arch in arm64 x86_64; do
+    case " $ARCHS " in
+        *" $arch "*) ;;
+        *) echo "ERROR: binary is missing $arch (has: $ARCHS)"; exit 1 ;;
+    esac
+done
 
 # Archive AFTER stapling. Stapling mutates the bundle, so the Sparkle
 # edSignature, the enclosure length, and the cask sha256 -- all computed below
