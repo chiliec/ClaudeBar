@@ -3,13 +3,16 @@ import ServiceManagement
 
 public struct SettingsView: View {
     @Bindable public var state: AppState
+    @Bindable public var license: LicenseStore
     private let updater: SparkleUpdater?
 
     @State private var platformPasteDraft: String = ""
     @State private var platformPasteError: String?
 
-    public init(state: AppState, updater: SparkleUpdater? = nil) {
+    @MainActor
+    public init(state: AppState, license: LicenseStore? = nil, updater: SparkleUpdater? = nil) {
         self.state = state
+        self.license = license ?? LicenseStore()
         self.updater = updater
     }
 
@@ -32,6 +35,7 @@ public struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     sessionGroup
                     platformAPISection
+                    ProSettingsSection(license: license)
 
                     // Launch at login
                     GroupBox {
@@ -256,9 +260,9 @@ struct LaunchAtLoginToggle: View {
         expiresAt: Date().addingTimeInterval(3600)
     )
     state.organizationDetails = OrganizationDetails(uuid: "fake-org", name: "Acme Inc", rateLimitTier: "default_claude_max_5x")
-    return SettingsView(state: state)
+    return SettingsView(state: state, license: LicenseStore())
 }
 
 #Preview("Settings - Disconnected") {
-    SettingsView(state: AppState(keychain: KeychainService(serviceName: "com.claudebar.preview")))
+    SettingsView(state: AppState(keychain: KeychainService(serviceName: "com.claudebar.preview")), license: LicenseStore())
 }

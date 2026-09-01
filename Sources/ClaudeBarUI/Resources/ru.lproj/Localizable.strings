@@ -72,3 +72,12 @@
 "oauthError.stateMismatch" = "Не удалось проверить вход. Попробуйте снова.";
 "oauthError.denied" = "Вход отменён.";
 "oauthError.tokenExchangeFailed %lld" = "Не удалось войти (HTTP %lld). Попробуйте снова.";
+"settings.pro" = "ClaudeBar Pro";
+"settings.pro.active" = "Pro — активно";
+"settings.pro.free" = "Бесплатно";
+"settings.pro.grace" = "Проверено офлайн. Переподключитесь в течение 14 дней, чтобы сохранить Pro.";
+"settings.pro.upgrade %@" = "Перейти на Pro — %@";
+"settings.pro.enterKey" = "Уже купили? Вставьте лицензионный ключ:";
+"settings.pro.keyPlaceholder" = "Лицензионный ключ";
+"settings.pro.activate" = "Активировать";
+"settings.pro.deactivate" = "Отключить этот Mac";

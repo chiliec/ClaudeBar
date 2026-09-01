@@ -20,6 +20,7 @@ struct ClaudeBarApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let appState = AppState()
+    private let licenseStore = LicenseStore()
     private let updater = SparkleUpdater()
 
     private var statusItem: NSStatusItem!
@@ -32,6 +33,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         makeStatusItem()
         makePanel()
+        // Re-validate any stored Pro license at launch (offline-grace safe).
+        Task { await licenseStore.refresh() }
     }
 
     // MARK: - Status item
@@ -98,7 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.delegate = self
 
         let controller = NSHostingController(
-            rootView: PopoverView(state: appState, updater: updater)
+            rootView: PopoverView(state: appState, license: licenseStore, updater: updater)
                 .background(PanelBackground())
                 .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                 // A status popover should snap, not animate: implicit animations here

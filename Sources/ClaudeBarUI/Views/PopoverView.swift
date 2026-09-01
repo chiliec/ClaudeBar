@@ -2,17 +2,20 @@ import SwiftUI
 
 public struct PopoverView: View {
     @Bindable public var state: AppState
+    private let license: LicenseStore
     private let updater: SparkleUpdater?
 
-    public init(state: AppState, updater: SparkleUpdater? = nil) {
+    @MainActor
+    public init(state: AppState, license: LicenseStore? = nil, updater: SparkleUpdater? = nil) {
         self.state = state
+        self.license = license ?? LicenseStore()
         self.updater = updater
     }
 
     public var body: some View {
         VStack(spacing: 0) {
             if state.showingSettings {
-                SettingsView(state: state, updater: updater)
+                SettingsView(state: state, license: license, updater: updater)
             } else if state.error == .sessionExpired {
                 // Session-expired routing must precede !isAuthenticated:
                 // handleSessionExpired nils the credentials, so isAuthenticated is
@@ -69,13 +72,13 @@ private extension AppState {
 }
 
 #Preview("Usage Detail") {
-    PopoverView(state: .previewWithUsage)
+    PopoverView(state: .previewWithUsage, license: LicenseStore())
 }
 
 #Preview("Setup") {
-    PopoverView(state: .previewNotAuthenticated)
+    PopoverView(state: .previewNotAuthenticated, license: LicenseStore())
 }
 
 #Preview("Session Expired") {
-    PopoverView(state: .previewSessionExpired)
+    PopoverView(state: .previewSessionExpired, license: LicenseStore())
 }
