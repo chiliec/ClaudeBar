@@ -19,7 +19,10 @@ struct ClaudeBarApp: App {
 /// left edge, and the item is given a fixed width so that edge never moves.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let appState = AppState()
+    /// Loaded in `applicationDidFinishLaunching`, not here: a Keychain read can sit
+    /// behind a password prompt, and `AppDelegate.init` runs before the app has
+    /// drawn anything. See `AppState.start()`.
+    private let appState = AppState(loadNow: false)
     /// Sparkle needs a real .app bundle -- Info.plist for SUFeedURL, and the
     /// framework's Updater.app to hand off to. `scripts/run.sh` runs the bare
     /// binary in `.build/debug`, where a check fails with "verify you have the
@@ -44,6 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         makeStatusItem()
         makePanel()
+        Task { await appState.start() }
         if let report = ProcessInfo.processInfo.environment["CLAUDEBAR_SMOKE"] {
             reportPanelGeometry(to: report)
         }

@@ -138,7 +138,7 @@ public enum OAuthService {
 
 /// The stored OAuth token set. Mirrors Claude Code's own credential blob so
 /// the shape is familiar if it ever needs inspecting by hand.
-public struct OAuthCredentials: Codable, Equatable {
+public struct OAuthCredentials: Codable, Equatable, Sendable {
     public let accessToken: String
     public let refreshToken: String
     public let expiresAt: Date
@@ -272,7 +272,7 @@ extension OAuthService {
 
 // MARK: - Multi-account storage
 
-public struct Account: Codable, Equatable, Identifiable {
+public struct Account: Codable, Equatable, Identifiable, Sendable {
     public let id: String
     public var label: String
     public var credentials: OAuthCredentials
@@ -284,7 +284,7 @@ public struct Account: Codable, Equatable, Identifiable {
     }
 }
 
-public struct AccountSet: Codable, Equatable {
+public struct AccountSet: Codable, Equatable, Sendable {
     public var accounts: [Account]
     public var activeID: String?
 

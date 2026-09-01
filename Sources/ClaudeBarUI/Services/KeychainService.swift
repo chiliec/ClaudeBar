@@ -1,7 +1,8 @@
 import Foundation
 import Security
 
-public protocol KeychainServicing {
+/// Sendable so `AppState.start()` can read the Keychain off the main thread.
+public protocol KeychainServicing: Sendable {
     func save(account: String, value: String) throws
     func retrieve(account: String) throws -> String?
     func delete(account: String) throws

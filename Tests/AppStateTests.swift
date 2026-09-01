@@ -52,6 +52,23 @@ struct AppStateTests {
         reloaded.wipeAllState()
     }
 
+    /// The app builds its state before it has drawn anything, so `init` must not
+    /// touch the Keychain: a read can sit behind a macOS password prompt, and on the
+    /// main thread that stops the status item from ever appearing. `start()` does the
+    /// read instead, off the main thread.
+    @Test func loadNowFalseDefersTheKeychainReadToStart() async throws {
+        let state = makeState()
+        let creds = testCredentials()
+        try state.saveCredentials(creds)
+
+        let deferred = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"),
+                                loadNow: false)
+        #expect(deferred.credentials == nil)
+        await deferred.start()
+        #expect(deferred.credentials == creds)
+        deferred.wipeAllState()
+    }
+
     // MARK: - Menu Bar Display Values
 
     @Test func menuBarTextWithNoUsage() {

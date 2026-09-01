@@ -43,8 +43,11 @@ public final class AppState {
     private var pollTimer: Timer?
     public var pollInterval: TimeInterval = 300 // 5 minutes
 
-    public init(keychain: any KeychainServicing = KeychainService()) {
+    /// `loadNow: false` builds an empty state and leaves the Keychain alone; the
+    /// app uses it and then calls `start()`. See there for why.
+    public init(keychain: any KeychainServicing = KeychainService(), loadNow: Bool = true) {
         self.keychain = keychain
+        guard loadNow else { return }
         loadCredentials()
         if isAuthenticated {
             // Defer polling start to next run loop to avoid publishing changes during init
@@ -52,6 +55,20 @@ public final class AppState {
                 self?.startPolling()
             }
         }
+    }
+
+    /// The app's launch path, in place of loading from `init`.
+    ///
+    /// Reading the login keychain blocks for as long as macOS keeps a password
+    /// prompt on screen, and it shows one whenever the stored item's ACL doesn't
+    /// trust this build — an item written by a pre-notarization copy of the app,
+    /// say. On the main thread that blocks the first run loop turn, so the status
+    /// item never gets drawn and the menu bar just looks empty until the prompt is
+    /// answered. Read on a background thread instead and apply the result here.
+    public func start() async {
+        let keychain = self.keychain
+        apply(await Task.detached { Self.readCredentials(from: keychain) }.value)
+        if isAuthenticated { startPolling() }
     }
 
     // MARK: - Computed Display Values
@@ -72,26 +89,46 @@ public final class AppState {
 
     // MARK: - Lifecycle
 
-    private static let legacyCredentialsAccount = "credentials"
-    private static let platformCredentialsAccount = "platform_credentials"
+    nonisolated private static let legacyCredentialsAccount = "credentials"
+    nonisolated private static let platformCredentialsAccount = "platform_credentials"
 
     public func loadCredentials() {
+        apply(Self.readCredentials(from: keychain))
+    }
+
+    /// Everything `loadCredentials` reads, and nothing it publishes — so `start()`
+    /// can run it off the main thread.
+    private struct StoredCredentials: Sendable {
+        var accounts: [Account] = []
+        var activeID: String?
+        var platformSessionKey: String?
+        /// A real Keychain failure (e.g. macOS denies access because the app's code
+        /// signing identity changed since the item was saved) is not the same as no
+        /// credentials existing yet — surface it instead of silently looking logged out.
+        var locked = false
+    }
+
+    nonisolated private static func readCredentials(from keychain: any KeychainServicing) -> StoredCredentials {
         // One-time migration: the pasted claude.ai sessionKey is dead weight now.
-        try? keychain.delete(account: Self.legacyCredentialsAccount)
+        try? keychain.delete(account: legacyCredentialsAccount)
+        var stored = StoredCredentials()
+        stored.platformSessionKey = try? keychain.retrieve(account: platformCredentialsAccount)
         do {
             let set = try AccountStore.load(from: keychain)
-            accounts = set.accounts
-            activeID = set.activeID
-            credentials = activeAccount?.credentials
-            platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
+            stored.accounts = set.accounts
+            stored.activeID = set.activeID
         } catch {
-            // A real Keychain failure (e.g. macOS denies access because the app's
-            // code signing identity changed since the item was saved) is not the
-            // same as no credentials existing yet — surface it instead of
-            // silently looking logged out.
-            platformSessionKey = try? keychain.retrieve(account: Self.platformCredentialsAccount)
-            self.error = .keychainLocked
+            stored.locked = true
         }
+        return stored
+    }
+
+    private func apply(_ stored: StoredCredentials) {
+        accounts = stored.accounts
+        activeID = stored.activeID
+        credentials = activeAccount?.credentials
+        platformSessionKey = stored.platformSessionKey
+        if stored.locked { error = .keychainLocked }
     }
 
     var activeAccount: Account? {
