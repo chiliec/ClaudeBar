@@ -6,6 +6,25 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.32</title>
+      <pubDate>Tue, 01 Sep 2026 06:46:56 +0000</pubDate>
+      <sparkle:version>0.0.32</sparkle:version>
+      <sparkle:shortVersionString>0.0.32</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Fixes the crash while signing in on macOS 26
+
+ClaudeBar drew its buttons with the new Liquid Glass styles. Resolving a glass
+effect inside ClaudeBar's panel crashes the app on macOS 26, and the "Sign in
+with Claude" button used one — so a new install could crash partway through
+authorizing, before it ever showed any usage.
+
+0.0.31 removed one glass effect, on the subscription tier badge, but missed the
+three button styles that reach the same code. All Liquid Glass is now gone from
+the app, on every macOS version, and a test fails the build if any of it comes
+back.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.32/ClaudeBar.zip" sparkle:edSignature="cEfLIPBA8g7L0tAF+IxQFoOFY2cO6zeAKtyOUnwVBBx4OOT3vjG0p2PWc3Uxs/5mZ2b9wKuOfYjc6IQ4ysF9Bw==" length="3623337" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.31</title>
       <pubDate>Tue, 01 Sep 2026 06:17:04 +0000</pubDate>
       <sparkle:version>0.0.31</sparkle:version>
