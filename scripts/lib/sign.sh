@@ -17,6 +17,16 @@ ENTITLEMENTS="Sources/ClaudeBar/ClaudeBar.entitlements"
 # certificate: a development-signed build cannot be notarized, and silently
 # shipping one would reintroduce the Gatekeeper prompt this whole setup exists
 # to remove.
+# find_cert <name-fragment>
+#
+# Echoes the first matching codesigning identity, or nothing if there is none.
+find_cert() {
+    security find-identity -v -p codesigning \
+        | grep -v CSSMERR \
+        | grep "$1" \
+        | head -1 | sed 's/.*"\(.*\)".*/\1/'
+}
+
 resolve_identity() {
     local mode="$1"
     local id=""
@@ -28,10 +38,7 @@ resolve_identity() {
 
     case "$mode" in
         release)
-            id=$(security find-identity -v -p codesigning \
-                 | grep -v CSSMERR \
-                 | grep "Developer ID Application" \
-                 | head -1 | sed 's/.*"\(.*\)".*/\1/')
+            id=$(find_cert "Developer ID Application")
             if [ -z "$id" ]; then
                 echo "ERROR: no 'Developer ID Application' certificate found in Keychain." >&2
                 echo "  A release must not fall back to a development certificate:" >&2
@@ -41,14 +48,23 @@ resolve_identity() {
             fi
             ;;
         dev)
-            id=$(security find-identity -v -p codesigning \
-                 | grep -v CSSMERR \
-                 | grep "Apple Development" \
-                 | head -1 | sed 's/.*"\(.*\)".*/\1/')
+            # Prefer the SAME certificate releases use. macOS keychain items in
+            # the login keychain carry an ACL bound to the signing identity, so
+            # a dev build signed with "Apple Development" and a release signed
+            # with "Developer ID Application" are two different apps as far as
+            # the keychain is concerned -- and every switch between them makes
+            # macOS prompt for the password again. One identity, one ACL, no
+            # prompts. Falls back to a development certificate, then ad-hoc.
+            id=$(find_cert "Developer ID Application")
             if [ -z "$id" ]; then
-                echo "Warning: no Apple Development certificate found. Using ad-hoc signing." >&2
+                id=$(find_cert "Apple Development")
+            fi
+            if [ -z "$id" ]; then
+                echo "Warning: no signing certificate found. Using ad-hoc signing." >&2
                 echo "  Set CODE_SIGN_IDENTITY or install a development certificate." >&2
                 echo "  Hardened runtime is skipped for ad-hoc builds (see sign_bundle)." >&2
+                echo "  Note: ad-hoc builds get their own keychain ACL, so macOS will" >&2
+                echo "  prompt for the password when they read saved credentials." >&2
                 id="-"
             fi
             ;;
