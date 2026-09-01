@@ -8,9 +8,40 @@ public protocol KeychainServicing {
 }
 
 public struct KeychainService: KeychainServicing {
+    /// The service the shipped app stores credentials under. Never change this:
+    /// every installed copy's saved accounts live here.
+    public static let productionServiceName = "com.claudebar"
+
+    /// Development builds get their own service so they never touch the real
+    /// accounts. They are signed differently from a release build, and a
+    /// login-keychain item's ACL is bound to the signing identity -- sharing one
+    /// item means macOS prompts for the keychain password on every switch
+    /// between a dev build and the installed app, on top of the risk of a
+    /// half-finished change corrupting live credentials.
+    ///
+    /// `isDebug` covers `scripts/run.sh`, which runs a bare debug binary with no
+    /// Info.plist. `override` covers `scripts/bundle.sh`, which builds in release
+    /// configuration and so stamps the key into the bundle it produces instead.
+    static func resolveServiceName(isDebug: Bool, override: String?) -> String {
+        if isDebug { return "\(productionServiceName).dev" }
+        return override ?? productionServiceName
+    }
+
+    public static let defaultServiceName: String = {
+        #if DEBUG
+        let isDebug = true
+        #else
+        let isDebug = false
+        #endif
+        return resolveServiceName(
+            isDebug: isDebug,
+            override: Bundle.main.object(forInfoDictionaryKey: "ClaudeBarKeychainService") as? String
+        )
+    }()
+
     public let serviceName: String
 
-    public init(serviceName: String = "com.claudebar") {
+    public init(serviceName: String = KeychainService.defaultServiceName) {
         self.serviceName = serviceName
     }
 

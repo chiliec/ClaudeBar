@@ -5,6 +5,23 @@ import Testing
 struct KeychainServiceTests {
     let service = KeychainService(serviceName: "com.claudebar.test")
 
+    /// A release build must land on the production service and nothing else:
+    /// getting this wrong points every installed copy at an empty keychain item
+    /// and silently signs the user out.
+    @Test func releaseBuildsUseTheProductionService() {
+        #expect(KeychainService.resolveServiceName(isDebug: false, override: nil)
+                == "com.claudebar")
+    }
+
+    @Test func devBuildsGetTheirOwnService() {
+        // run.sh: debug binary, no Info.plist to read an override from.
+        #expect(KeychainService.resolveServiceName(isDebug: true, override: nil)
+                == "com.claudebar.dev")
+        // bundle.sh: release configuration, so the override is the only signal.
+        #expect(KeychainService.resolveServiceName(isDebug: false, override: "com.claudebar.dev")
+                == "com.claudebar.dev")
+    }
+
     private func cleanup() {
         try? service.delete(account: "sessionKey")
         try? service.delete(account: "orgId")

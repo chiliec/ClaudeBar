@@ -17,6 +17,13 @@ mkdir -p "$BUNDLE_DIR/Contents/Resources"
 
 cp "$BUILD_DIR/$APP_NAME" "$BUNDLE_DIR/Contents/MacOS/"
 cp Sources/ClaudeBar/Info.plist "$BUNDLE_DIR/Contents/"
+# This bundle is for local testing, so point it at the dev keychain service. It
+# builds in release configuration, so KeychainService's #if DEBUG arm can't see
+# it -- the key is how it finds out. release.sh deliberately never sets this, so
+# a shipped build falls back to the production service.
+/usr/libexec/PlistBuddy -c \
+    "Add :ClaudeBarKeychainService string com.claudebar.dev" \
+    "$BUNDLE_DIR/Contents/Info.plist"
 cp Sources/Resources/AppIcon.icns "$BUNDLE_DIR/Contents/Resources/"
 # ClaudeBarUI's localized strings. Bundle.module looks for this beside the other
 # resources; without it every `Text(..., bundle: .module)` traps at render time,

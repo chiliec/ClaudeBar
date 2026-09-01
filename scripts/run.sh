@@ -3,18 +3,16 @@ set -e
 
 APP_NAME="ClaudeBar"
 
-# Use CODE_SIGN_IDENTITY env var if set, otherwise auto-detect
-if [ -z "$CODE_SIGN_IDENTITY" ]; then
-    CODE_SIGN_IDENTITY=$(security find-identity -v -p codesigning | grep "Apple Development" | head -1 | sed 's/.*"\(.*\)".*/\1/')
-fi
+# Share the release scripts' identity resolution rather than duplicating it:
+# this had its own "Apple Development" lookup, which meant it kept signing with
+# a different certificate than every other build path.
+# shellcheck source=lib/sign.sh
+source "$(dirname "$0")/lib/sign.sh"
+CODE_SIGN_IDENTITY=$(resolve_identity dev)
+echo "Signing with: $CODE_SIGN_IDENTITY"
 
-if [ -z "$CODE_SIGN_IDENTITY" ]; then
-    echo "Warning: No Apple Development certificate found. Using ad-hoc signing."
-    echo "  Keychain access will prompt for password on every run."
-    echo "  Set CODE_SIGN_IDENTITY env var or install a development certificate."
-    CODE_SIGN_IDENTITY="-"
-fi
-
+# Debug build, so KeychainService uses com.claudebar.dev -- this never reads or
+# writes the installed app's accounts. Sign in again here; that is expected.
 swift build
 codesign --force --sign "$CODE_SIGN_IDENTITY" --entitlements Sources/ClaudeBar/ClaudeBar.entitlements ".build/debug/$APP_NAME"
 ".build/debug/$APP_NAME"
