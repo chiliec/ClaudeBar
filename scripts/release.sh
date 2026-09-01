@@ -132,7 +132,12 @@ verify_bundle "$BUNDLE_DIR"
 echo "==> Smoke testing the built app"
 SMOKE_DIR=$(mktemp -d)
 ditto "$BUNDLE_DIR" "$SMOKE_DIR/$APP_NAME.app"
-open -n "$SMOKE_DIR/$APP_NAME.app"
+# Its own keychain service: reading the real one can block in SecItemCopyMatching
+# behind a login-keychain ACL prompt, which freezes the app before it builds its
+# status item. Passed in the environment because editing Info.plist -- the other
+# way to set this -- would invalidate the signature of the bundle being shipped.
+open -n --env "CLAUDEBAR_SMOKE=$SMOKE_DIR/panel.txt" \
+        --env "CLAUDEBAR_KEYCHAIN_SERVICE=com.claudebar.smoke" "$SMOKE_DIR/$APP_NAME.app"
 sleep 8
 SMOKE_PID=$(pgrep -f "$SMOKE_DIR/$APP_NAME.app/Contents/MacOS/$APP_NAME" || true)
 if [ -z "$SMOKE_PID" ]; then
@@ -143,6 +148,17 @@ if [ -z "$SMOKE_PID" ]; then
     exit 1
 fi
 kill "$SMOKE_PID"
+
+# CLAUDEBAR_SMOKE opens the panel and writes what it measured. An empty panel
+# (content=0) or one sized differently from its content is the shape of every
+# panel bug shipped so far, and surviving launch does not catch either.
+PANEL=$(cat "$SMOKE_DIR/panel.txt" 2>/dev/null || true)
+echo "    panel geometry: ${PANEL:-<none written>}"
+if [ -z "$PANEL" ] || ! awk -F'[= ]' \
+        '{ exit !($2 > 0 && $4 > 0 && ($2 - $4) ^ 2 < 1) }' <<<"$PANEL"; then
+    echo "ERROR: the panel did not open at its content's size."
+    exit 1
+fi
 rm -rf "$SMOKE_DIR"
 
 echo "==> Notarizing"

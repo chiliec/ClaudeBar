@@ -34,6 +34,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// this itself for a contentViewController, but the panel's content view is
     /// the material backdrop instead — see makePanel().
     private var contentSizeObservation: NSKeyValueObservation?
+    /// Held explicitly: the panel's content view is the backdrop, so nothing but the
+    /// responder chain would keep the hosting controller alive.
+    private var panelContent: NSViewController!
 
     private static let panelWidth: CGFloat = 320
 
@@ -41,6 +44,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         makeStatusItem()
         makePanel()
+        if let report = ProcessInfo.processInfo.environment["CLAUDEBAR_SMOKE"] {
+            reportPanelGeometry(to: report)
+        }
+    }
+
+    /// Release smoke test hook (`scripts/release.sh`). Launching the app only proves
+    /// the bundle loads; three releases in a row were broken in the panel, which
+    /// nothing opens until the user clicks. Open it and write out what it measures,
+    /// so the release can fail on a panel that crashed, came up empty, or came up a
+    /// different height than its content.
+    private func reportPanelGeometry(to path: String) {
+        showPanel()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [self] in
+            let line = "panel=\(panel.frame.height)"
+                + " content=\(panelContent.view.fittingSize.height)"
+            try? line.write(toFile: path, atomically: true, encoding: .utf8)
+        }
     }
 
     // MARK: - Status item
@@ -113,18 +133,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 // window resizes along with the content.
                 .transaction { $0.animation = nil }
         )
-        // Let the window follow the content's height: the popover swaps between usage,
-        // settings and error views, which are all different sizes.
+        // Keeps preferredContentSize tracking the content, which the observation
+        // below applies to the panel. The popover swaps between usage, settings and
+        // error views, which are all different heights.
         controller.sizingOptions = [.preferredContentSize]
 
-        // The material is the panel's own content view, NOT an NSViewRepresentable
-        // inside the SwiftUI tree. Hosted in SwiftUI it was the single AppKit view
-        // the render pass had to position, so every frame ran
-        // CoreViewSetGeometry -> NSView.setFrameOrigin: ->
-        // _updateSimpleAutoresizingConstraintsInPlace -> NSISEngine deep inside
-        // layout. Signing in swaps a short view for a tall one, and the resulting
-        // resize blew the main thread's stack there. Behind the hosting view the
-        // backdrop is sized once by autoresizing and never by SwiftUI.
+        // The controller is deliberately NOT the panel's contentViewController.
+        // AppKit resizes the window for one from NSHostingView.windowDidLayout ->
+        // updateAnimatedWindowSize, i.e. from inside the layout pass, and the
+        // resize re-enters layout: NSView.setFrameOrigin: ->
+        // _updateSimpleAutoresizingConstraintsInPlace -> NSISEngine
+        // _flushPendingRemovals, which runs the main thread out of stack. Verified
+        // by A/B: contentViewController crashes within seconds of the panel
+        // opening, this arrangement does not. Applying the size from a KVO callback
+        // instead keeps the resize outside the layout pass.
         let backdrop = NSVisualEffectView()
         backdrop.material = .menu
         backdrop.blendingMode = .behindWindow
@@ -133,13 +155,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         backdrop.layer?.cornerRadius = 11
         backdrop.layer?.masksToBounds = true
 
+        // Assign the backdrop first: a freshly constructed NSVisualEffectView has a
+        // zero frame, and becoming the content view is what gives it the panel's
+        // size. Sizing the hosting view from bounds before that leaves it at zero,
+        // and an autoresizing mask scales a zero frame to nothing -- the panel then
+        // shows a clipped slice of its content.
+        panel.contentView = backdrop
         controller.view.frame = backdrop.bounds
         controller.view.autoresizingMask = [.width, .height]
         backdrop.addSubview(controller.view)
-        panel.contentView = backdrop
+        panelContent = controller
 
-        // sizingOptions keeps preferredContentSize current, but only a
-        // contentViewController gets it applied to the window automatically.
         contentSizeObservation = controller.observe(
             \.preferredContentSize, options: [.initial, .new]
         ) { [weak self] controller, _ in
@@ -200,9 +226,10 @@ extension AppDelegate: NSWindowDelegate {
     /// Resizing keeps the bottom-left origin, which would grow the panel up into the
     /// menu bar — re-pin it to the status item instead.
     ///
-    /// Only move the panel here, never resize it: the hosting controller owns the
-    /// window's size, and setting a size it disagrees with recurses until the stack
-    /// overflows. Content that shouldn't change height is handled in the views.
+    /// Only move the panel here, never resize it: the content's preferred size owns
+    /// the window's size (see makePanel), and setting a size it disagrees with
+    /// recurses until the stack overflows. Content that shouldn't change height is
+    /// handled in the views.
     func windowDidResize(_ notification: Notification) {
         guard panel.isVisible else { return }
         positionPanel()

@@ -21,7 +21,9 @@ public struct KeychainService: KeychainServicing {
     ///
     /// `isDebug` covers `scripts/run.sh`, which runs a bare debug binary with no
     /// Info.plist. `override` covers `scripts/bundle.sh`, which builds in release
-    /// configuration and so stamps the key into the bundle it produces instead.
+    /// configuration and so stamps the key into the bundle it produces instead,
+    /// and release.sh's smoke test, which passes it in the environment -- editing
+    /// the Info.plist of the bundle it is about to ship would break its signature.
     static func resolveServiceName(isDebug: Bool, override: String?) -> String {
         if isDebug { return "\(productionServiceName).dev" }
         return override ?? productionServiceName
@@ -35,7 +37,8 @@ public struct KeychainService: KeychainServicing {
         #endif
         return resolveServiceName(
             isDebug: isDebug,
-            override: Bundle.main.object(forInfoDictionaryKey: "ClaudeBarKeychainService") as? String
+            override: ProcessInfo.processInfo.environment["CLAUDEBAR_KEYCHAIN_SERVICE"]
+                ?? Bundle.main.object(forInfoDictionaryKey: "ClaudeBarKeychainService") as? String
         )
     }()
 
