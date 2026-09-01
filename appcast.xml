@@ -6,6 +6,30 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.34</title>
+      <pubDate>Tue, 01 Sep 2026 07:49:06 +0000</pubDate>
+      <sparkle:version>0.0.34</sparkle:version>
+      <sparkle:shortVersionString>0.0.34</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Fixes the clipped panel in 0.0.33
+
+0.0.33 left the panel stuck at a fixed height, cutting the header off the top
+and the rest off the bottom. Its background view was measured before it had a
+size, so the interface drawn on top of it was laid out to nothing and then
+scaled up from there.
+
+That release also described the sign-in crash wrongly. The crash came from
+letting the panel resize itself from inside its own layout pass, not from where
+the background was drawn — 0.0.33 happened to stop doing that, which is why it
+fixed the crash. Both are now fixed deliberately, and the panel sizes itself to
+its content again.
+
+The release process now opens the panel and checks it before shipping. Every
+release since 0.0.30 was broken in the panel, and nothing opened it until you
+clicked.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.34/ClaudeBar.zip" sparkle:edSignature="i7AtDemwV16EWLxOYL7Og20lo96wI4Kze4HxDWg7njPK6xi94kYZ0q0FjhcJdPkJXdQnYSw05927v/qGtz4+AQ==" length="3626057" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.33</title>
       <pubDate>Tue, 01 Sep 2026 07:08:51 +0000</pubDate>
       <sparkle:version>0.0.33</sparkle:version>
