@@ -30,6 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var panel: NSPanel!
     private var lastHiddenAt = Date.distantPast
+    /// Applies the hosting controller's preferred size to the panel. AppKit does
+    /// this itself for a contentViewController, but the panel's content view is
+    /// the material backdrop instead — see makePanel().
+    private var contentSizeObservation: NSKeyValueObservation?
 
     private static let panelWidth: CGFloat = 320
 
@@ -104,8 +108,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let controller = NSHostingController(
             rootView: PopoverView(state: appState, updater: updater)
-                .background(PanelBackground())
-                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                 // A status popover should snap, not animate: implicit animations here
                 // turn every refresh and account switch into a visible wobble, and the
                 // window resizes along with the content.
@@ -114,7 +116,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Let the window follow the content's height: the popover swaps between usage,
         // settings and error views, which are all different sizes.
         controller.sizingOptions = [.preferredContentSize]
-        panel.contentViewController = controller
+
+        // The material is the panel's own content view, NOT an NSViewRepresentable
+        // inside the SwiftUI tree. Hosted in SwiftUI it was the single AppKit view
+        // the render pass had to position, so every frame ran
+        // CoreViewSetGeometry -> NSView.setFrameOrigin: ->
+        // _updateSimpleAutoresizingConstraintsInPlace -> NSISEngine deep inside
+        // layout. Signing in swaps a short view for a tall one, and the resulting
+        // resize blew the main thread's stack there. Behind the hosting view the
+        // backdrop is sized once by autoresizing and never by SwiftUI.
+        let backdrop = NSVisualEffectView()
+        backdrop.material = .menu
+        backdrop.blendingMode = .behindWindow
+        backdrop.state = .active
+        backdrop.wantsLayer = true
+        backdrop.layer?.cornerRadius = 11
+        backdrop.layer?.masksToBounds = true
+
+        controller.view.frame = backdrop.bounds
+        controller.view.autoresizingMask = [.width, .height]
+        backdrop.addSubview(controller.view)
+        panel.contentView = backdrop
+
+        // sizingOptions keeps preferredContentSize current, but only a
+        // contentViewController gets it applied to the window automatically.
+        contentSizeObservation = controller.observe(
+            \.preferredContentSize, options: [.initial, .new]
+        ) { [weak self] controller, _ in
+            MainActor.assumeIsolated {
+                let size = controller.preferredContentSize
+                guard let self, size.width > 0, size.height > 0 else { return }
+                self.panel.setContentSize(size)
+            }
+        }
     }
 
     @objc private func togglePanel() {
@@ -175,15 +209,3 @@ extension AppDelegate: NSWindowDelegate {
     }
 }
 
-/// The material AppKit uses for menu bar panels — what MenuBarExtra drew for free.
-private struct PanelBackground: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .menu
-        view.blendingMode = .behindWindow
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
-}
