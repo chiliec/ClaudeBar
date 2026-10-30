@@ -6,6 +6,23 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.37</title>
+      <pubDate>Fri, 30 Oct 2026 07:23:19 +0000</pubDate>
+      <sparkle:version>0.0.37</sparkle:version>
+      <sparkle:shortVersionString>0.0.37</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Fixes a false "Setup ClaudeBar" screen after upgrading
+
+If a session expired while you were still on 0.0.35, that version deleted the
+account and cleared the active-account pointer. Upgrading to 0.0.36 then showed
+the first-run Setup screen even though your other accounts were still saved,
+and the only way back was to sign in again.
+
+ClaudeBar now falls back to the first saved account when the pointer is
+missing, so your accounts show up straight away.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.37/ClaudeBar.zip" sparkle:edSignature="9gjFNNXZtC3Al8maB8ch+fh2Zof5iGhpAgdRypt/Yd6OZohYNEWCVpJZk55ojMqaVMWCyIKIRte9DkkrRNUcBg==" length="3638983" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.36</title>
       <pubDate>Fri, 30 Oct 2026 07:06:42 +0000</pubDate>
       <sparkle:version>0.0.36</sparkle:version>
