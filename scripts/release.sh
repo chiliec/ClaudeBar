@@ -250,7 +250,9 @@ rm -f "$NEW_ITEM_FILE"
 echo "==> Committing release in ClaudeBar repo"
 git add Sources/ClaudeBar/Info.plist "$APPCAST_FILE"
 git diff --cached --quiet || git commit -m "release: v$VERSION"
-git tag -f "v$VERSION"
+# -m: with tag.gpgsign on, git makes an annotated (signed) tag, which needs a
+# message; without one it aborts when no editor is available.
+git tag -f -m "v$VERSION" "v$VERSION"
 # Push the branch WITHOUT --force. Forcing it here silently destroyed a merged
 # PR during the v0.0.29 release: anything landed on the remote since the last
 # release is not in this checkout, and --force discards it. Only the tag needs
