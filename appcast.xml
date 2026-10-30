@@ -6,6 +6,25 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.36</title>
+      <pubDate>Fri, 30 Oct 2026 07:06:42 +0000</pubDate>
+      <sparkle:version>0.0.36</sparkle:version>
+      <sparkle:shortVersionString>0.0.36</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### An expired account no longer locks you out of the others
+
+When one account's Claude session expired, ClaudeBar dropped it and showed a
+full-screen "Sign in" panel with no way to reach your other accounts. The only
+way out was to re-authorize that exact account.
+
+The expired account now stays in the account menu, marked "expired", and the
+menu stays in the header above the sign-in panel. Switch to any other account
+and usage loads as usual; pick the expired one and you get the sign-in panel
+straight away, no waiting on a doomed request. Signing in again replaces the
+expired entry in place.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.36/ClaudeBar.zip" sparkle:edSignature="BAgIKeFBSyG3QoqZ46+lXfoPeLX9MV4uOlYHm7HFiJ/hQ0haPXlXrhkRBtOZ8DYftwGPShQvjJ0Mjiwv2EbrBw==" length="3637040" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.35</title>
       <pubDate>Tue, 01 Sep 2026 08:10:02 +0000</pubDate>
       <sparkle:version>0.0.35</sparkle:version>
