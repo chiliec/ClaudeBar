@@ -376,6 +376,21 @@ struct AppStateTests {
         state.wipeAllState()
     }
 
+    @Test func loadWithoutActivePointerActivatesFirstAccount() throws {
+        // Blob shape left behind by 0.0.35 after an expiry: accounts present,
+        // activeID nil. Must not route to the first-run Setup screen.
+        let kc = KeychainService(serviceName: "com.claudebar.test")
+        try AccountStore.save(
+            AccountSet(accounts: [account("u1", "a@x.com"), account("u2", "b@x.com")], activeID: nil),
+            to: kc)
+
+        let state = AppState(keychain: kc)
+        #expect(state.activeID == "u1")
+        #expect(state.isAuthenticated)
+        #expect(state.accounts.count == 2)
+        state.wipeAllState()
+    }
+
     @Test func removeActiveReactivatesAnother() throws {
         let state = makeState()
         state.accounts = [account("u1", "a@x.com"), account("u2", "b@x.com")]

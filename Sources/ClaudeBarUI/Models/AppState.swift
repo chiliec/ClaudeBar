@@ -126,6 +126,9 @@ public final class AppState {
     private func apply(_ stored: StoredCredentials) {
         accounts = stored.accounts
         activeID = stored.activeID
+        // Accounts but no live pointer (0.0.35 cleared it when a session expired)
+        // must not look like a first run: fall back to the first account.
+        if activeAccount == nil { activeID = accounts.first?.id }
         loadActiveCredentials()
         platformSessionKey = stored.platformSessionKey
         if stored.locked { error = .keychainLocked }
