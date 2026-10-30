@@ -1,3 +1,4 @@
+"account.expiredSuffix" = " · expired";
 "action.addAccount" = "Add Account…";
 "action.cancel" = "Cancel";
 "action.checkForUpdates" = "Check for Updates";
@@ -25,7 +26,6 @@
 "settings.accounts" = "Accounts";
 "session.expired" = "Session Expired";
 "session.expiredSubtitle" = "Your Claude session expired. Sign in again to keep tracking usage.";
-"session.reconnect %@" = "Reconnect %@";
 "settings.connected" = "Connected";
 "settings.connectedAs %@" = "Connected as %@";
 "settings.general" = "General";

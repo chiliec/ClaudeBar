@@ -78,6 +78,28 @@ struct PopoverViewTests {
         _ = try inspected.find(SessionExpiredView.self)
         #expect(throws: (any Error).self) { try inspected.find(SetupView.self) }
     }
+
+    @Test func sessionExpiredScreenKeepsTheAccountMenu() throws {
+        // The whole point: an expired session must not hide the switcher.
+        let state = makeState()
+        state.accounts = [
+            Account(id: "u1", label: "a@x.com",
+                    credentials: OAuthCredentials(accessToken: "a", refreshToken: "b",
+                                                  expiresAt: Date()),
+                    expiredAt: Date()),
+            Account(id: "u2", label: "b@x.com",
+                    credentials: OAuthCredentials(accessToken: "c", refreshToken: "d",
+                                                  expiresAt: Date().addingTimeInterval(3600))),
+        ]
+        state.activeID = "u1"
+        state.error = .sessionExpired
+        let inspected = try PopoverView(state: state).inspect()
+
+        _ = try inspected.find(UsageDetailView.self)
+        _ = try inspected.find(SessionExpiredView.self)
+        _ = try inspected.find(ViewType.Menu.self)
+        state.wipeAllState()
+    }
 }
 
 // MARK: - SetupView Tests
@@ -154,12 +176,14 @@ struct SessionExpiredViewTests {
         _ = try inspected.find(text: "Session Expired")
     }
 
-    @Test func showsOrgNameInTitleWhenCached() throws {
+    @Test func titleStaysGenericWhenOrgCached() throws {
+        // The header above the panel names the account; the title no longer does.
         let state = makeState()
         state.organizationDetails = OrganizationDetails(uuid: "org-123", name: "Acme", rateLimitTier: nil)
         let view = SessionExpiredView(state: state)
         let inspected = try view.inspect()
-        _ = try inspected.find(text: "Reconnect Acme")
+        _ = try inspected.find(text: "Session Expired")
+        #expect(throws: (any Error).self) { try inspected.find(text: "Reconnect Acme") }
     }
 
     @Test func showsSignInButton() throws {
@@ -205,6 +229,23 @@ struct UsageDetailViewHeaderTests {
         state.activeID = "u1"
         let view = UsageDetailView(state: state)
         #expect(view.state.accounts.count == 2)   // switcher data is wired
+        state.wipeAllState()
+    }
+
+    @Test func menuLabelsExpiredAccount() throws {
+        let state = makeState()
+        state.accounts = [
+            Account(id: "u1", label: "a@x.com",
+                    credentials: OAuthCredentials(accessToken: "a", refreshToken: "b",
+                                                  expiresAt: Date()),
+                    expiredAt: Date()),
+            Account(id: "u2", label: "b@x.com",
+                    credentials: OAuthCredentials(accessToken: "c", refreshToken: "d",
+                                                  expiresAt: Date().addingTimeInterval(3600))),
+        ]
+        state.activeID = "u2"
+        #expect(UsageDetailView.menuLabel(for: state.accounts[0]) == "a@x.com · expired")
+        #expect(UsageDetailView.menuLabel(for: state.accounts[1]) == "b@x.com")
         state.wipeAllState()
     }
 

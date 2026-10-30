@@ -25,6 +25,10 @@ struct UsageDetailView: View {
                         .padding(.bottom, 8)
                     apiCreditsSection(credits, isStale: state.platformCreditsIsStale)
                 }
+            } else if state.error == .sessionExpired {
+                // Must precede isLoading: signIn() sets isLoading, and the
+                // sign-in panel shows its own spinner.
+                SessionExpiredView(state: state)
             } else if state.isLoading {
                 ProgressView()
                     .padding(40)
@@ -76,6 +80,13 @@ struct UsageDetailView: View {
         label.background(.quaternary).clipShape(Capsule())
     }
 
+    /// Menu row text: the account's email, plus an "expired" suffix when its
+    /// session is known-dead so the user can tell which entries still work.
+    static func menuLabel(for account: Account) -> String {
+        guard account.expiredAt != nil else { return account.label }
+        return account.label + String(localized: "account.expiredSuffix", bundle: .module)
+    }
+
     @ViewBuilder
     private var headerTitle: some View {
         let title = state.organizationDetails?.displayName
@@ -86,9 +97,9 @@ struct UsageDetailView: View {
                     state.switchTo(id: account.id)
                 } label: {
                     if account.id == state.activeID {
-                        Label(account.label, systemImage: "checkmark")
+                        Label(Self.menuLabel(for: account), systemImage: "checkmark")
                     } else {
-                        Text(account.label)
+                        Text(Self.menuLabel(for: account))
                     }
                 }
             }

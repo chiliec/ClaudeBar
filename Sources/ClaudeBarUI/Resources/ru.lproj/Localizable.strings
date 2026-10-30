@@ -1,3 +1,4 @@
+"account.expiredSuffix" = " · истекла";
 "action.addAccount" = "Добавить аккаунт…";
 "action.cancel" = "Отмена";
 "action.checkForUpdates" = "Проверить обновления";
@@ -25,7 +26,6 @@
 "settings.accounts" = "Аккаунты";
 "session.expired" = "Сессия истекла";
 "session.expiredSubtitle" = "Сессия Claude истекла. Войдите снова, чтобы продолжить отслеживание.";
-"session.reconnect %@" = "Переподключить %@";
 "settings.connected" = "Подключено";
 "settings.connectedAs %@" = "Подключено как %@";
 "settings.general" = "Основные";

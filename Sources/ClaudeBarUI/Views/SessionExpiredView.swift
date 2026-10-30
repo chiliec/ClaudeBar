@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// The sign-in panel shown in place of the usage rows when the active
+/// account's session is dead. The header above it already names the account.
 public struct SessionExpiredView: View {
     public let state: AppState
 
@@ -8,18 +10,11 @@ public struct SessionExpiredView: View {
     public var body: some View {
         SignInView(
             state: state,
-            title: titleString,
+            title: String(localized: "session.expired", bundle: .module),
             subtitle: String(localized: "session.expiredSubtitle", bundle: .module),
             buttonLabel: String(localized: "action.signIn", bundle: .module),
             titleIcon: "exclamationmark.triangle",
             titleColor: .orange
         )
-    }
-
-    private var titleString: String {
-        if let name = state.organizationDetails?.displayName {
-            return String(localized: "session.reconnect \(name)", bundle: .module)
-        }
-        return String(localized: "session.expired", bundle: .module)
     }
 }

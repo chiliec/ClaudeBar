@@ -16,8 +16,9 @@ public struct PopoverView: View {
             } else if state.error == .sessionExpired {
                 // Session-expired routing must precede !isAuthenticated:
                 // handleSessionExpired nils the credentials, so isAuthenticated is
-                // false, but the cached profile lets us name the account.
-                SessionExpiredView(state: state)
+                // false. UsageDetailView keeps the account menu in its header and
+                // renders the sign-in panel in place of the usage rows.
+                UsageDetailView(state: state)
             } else if state.error == .keychainLocked {
                 // Same ordering reason as sessionExpired above: a Keychain
                 // failure during loadCredentials also leaves isAuthenticated
