@@ -217,19 +217,20 @@ struct AppStateTests {
         #expect(state.organizationDetails?.name == "Acme")
     }
 
-    @Test func handleSessionExpiredSurvivesRelaunch() throws {
-        // Regression guard: pre-fix, handleSessionExpired() only cleared the
-        // legacy single-credential Keychain key, leaving the AccountStore blob
-        // intact — so a fresh AppState over the same keychain would resurrect
-        // the "expired" account on next load.
+    @Test func handleSessionExpiredKeepsAccountMarkedAcrossRelaunch() throws {
+        // The dead account must stay in the Keychain set (so the switcher can
+        // still list it) but carry an expiry mark, and must not load as signed in.
         let state = makeState()
         try state.saveCredentials(testCredentials())
 
         state.handleSessionExpired()
+        #expect(state.activeID != nil)
+        #expect(state.activeAccount?.expiredAt != nil)
 
         let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        #expect(reloaded.accounts.count == 1)
+        #expect(reloaded.accounts.first?.expiredAt != nil)
         #expect(!reloaded.isAuthenticated)
-        #expect(reloaded.accounts.isEmpty)
         reloaded.wipeAllState()
     }
 
@@ -319,6 +320,59 @@ struct AppStateTests {
         #expect(state.usage != nil)
         #expect(state.isSwitchingAccount)
         #expect(state.organizationDetails == nil)   // header falls back to the new label
+        state.wipeAllState()
+    }
+
+    @Test func switchToExpiredAccountShowsSignInWithoutPolling() throws {
+        let state = makeState()
+        var dead = account("u2", "b@x.com")
+        dead.expiredAt = Date()
+        state.accounts = [account("u1", "a@x.com"), dead]
+        state.activeID = "u1"
+        state.usage = UsageResponse(fiveHour: nil,
+                                    sevenDay: WindowUsage(utilization: 0.5, resetsAt: nil))
+        state.switchTo(id: "u2")
+        #expect(state.activeID == "u2")
+        #expect(state.credentials == nil)
+        #expect(state.error == .sessionExpired)
+        // No redaction and no stale numbers: the body must render the sign-in panel.
+        #expect(state.usage == nil)
+        #expect(!state.isSwitchingAccount)
+        state.wipeAllState()
+    }
+
+    @Test func switchBackFromExpiredToHealthyAccountClearsError() throws {
+        let state = makeState()
+        var dead = account("u1", "a@x.com")
+        dead.expiredAt = Date()
+        state.accounts = [dead, account("u2", "b@x.com")]
+        state.activeID = "u1"
+        state.error = .sessionExpired
+        state.switchTo(id: "u2")
+        #expect(state.credentials != nil)
+        #expect(state.error == nil)
+        state.wipeAllState()
+    }
+
+    @Test func loadingAnExpiredActiveAccountReportsSessionExpired() throws {
+        let state = makeState()
+        try state.saveCredentials(testCredentials())
+        state.handleSessionExpired()
+
+        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        #expect(reloaded.error == .sessionExpired)
+        #expect(reloaded.credentials == nil)
+        reloaded.wipeAllState()
+    }
+
+    @Test func saveCredentialsAfterExpiryClearsTheMark() throws {
+        // signIn() lands here via upsert: same uuid, fresh tokens, no mark.
+        let state = makeState()
+        try state.saveCredentials(testCredentials())
+        state.handleSessionExpired()
+        try state.saveCredentials(testCredentials())
+        #expect(state.activeAccount?.expiredAt == nil)
+        #expect(state.isAuthenticated)
         state.wipeAllState()
     }
 

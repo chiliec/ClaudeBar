@@ -126,7 +126,7 @@ public final class AppState {
     private func apply(_ stored: StoredCredentials) {
         accounts = stored.accounts
         activeID = stored.activeID
-        credentials = activeAccount?.credentials
+        loadActiveCredentials()
         platformSessionKey = stored.platformSessionKey
         if stored.locked { error = .keychainLocked }
     }
@@ -138,7 +138,6 @@ public final class AppState {
     /// Point the session at the (new) active account. Keeping stale usage leaves the
     /// old numbers in place for the redacted mid-switch layout; clearing drops them.
     private func resetSession(keepStaleUsage: Bool) {
-        credentials = activeAccount?.credentials
         if keepStaleUsage {
             isSwitchingAccount = true
         } else {
@@ -147,6 +146,22 @@ public final class AppState {
         organizationDetails = nil
         lastUpdated = nil
         error = nil
+        loadActiveCredentials()
+    }
+
+    /// Load the active account's tokens, or none when its session is known-dead.
+    /// A dead account gets the sign-in panel straight away — no redacted layout,
+    /// no doomed round trip.
+    private func loadActiveCredentials() {
+        guard let acct = activeAccount else { credentials = nil; return }
+        if acct.expiredAt == nil {
+            credentials = acct.credentials
+        } else {
+            credentials = nil
+            usage = nil
+            isSwitchingAccount = false
+            error = .sessionExpired
+        }
     }
 
     private func persistAccounts() throws {
@@ -181,7 +196,7 @@ public final class AppState {
         // resizing twice.
         resetSession(keepStaleUsage: true)
         try? persistAccounts()
-        startPolling()      // fetches the newly active account immediately
+        if isAuthenticated { startPolling() } else { stopPolling() }   // expired: no fetch
     }
 
     public func removeAccount(id: String) {
@@ -191,7 +206,7 @@ public final class AppState {
             resetSession(keepStaleUsage: false)
         }
         try? persistAccounts()
-        if activeID == nil { stopPolling() } else { startPolling() }
+        if isAuthenticated { startPolling() } else { stopPolling() }
     }
 
     /// After the first profile fetch, replace a migrated/default account's
@@ -238,19 +253,18 @@ public final class AppState {
         cachedPlatformOrgId = nil
     }
 
-    /// Non-destructive recovery: drops the token set but preserves
-    /// `organizationDetails` so the re-login screen can name the account.
+    /// Non-destructive recovery: marks the active account expired and drops its
+    /// tokens from the session, but keeps it in the list so the switcher can
+    /// still reach the others. `organizationDetails` survives for the header.
     func handleSessionExpired() {
-        // Drop only the expired account from the persisted set — its refresh
-        // token is dead and re-login will create a fresh entry. Other accounts
-        // (once multi-account is wired up) are untouched.
-        accounts.removeAll { $0.id == activeID }
-        activeID = nil
-        try? persistAccounts()
+        if let i = accounts.firstIndex(where: { $0.id == activeID }) {
+            accounts[i].expiredAt = Date()
+            try? persistAccounts()
+        }
+        stopPolling()
         credentials = nil
         usage = nil
         error = .sessionExpired
-        // organizationDetails: preserved
     }
 
     // MARK: - API Calls
