@@ -6,6 +6,23 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.39</title>
+      <pubDate>Sun, 01 Nov 2026 04:10:07 +0000</pubDate>
+      <sparkle:version>0.0.39</sparkle:version>
+      <sparkle:shortVersionString>0.0.39</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Shows what used your week
+
+A new line under the weekly total breaks it down by surface, for example
+"Claude Code 81% · Cowork 17% · Chats 2%". Surfaces at 0% are left out.
+
+### Tidier layout for Ultra accounts
+
+The "7-Day Windows" heading no longer repeats directly under the "7-Day
+Window" bar when the weekly total is the headline.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.39/ClaudeBar.zip" sparkle:edSignature="dh3VTV38CK4al3x3A90tvguP2t8qrjko5TjCTt8ykV+RWqpQm+4JbsV576s5j5Qy6R8F/NbLHBu5IiHOpf9GDA==" length="3659837" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.38</title>
       <pubDate>Sun, 01 Nov 2026 04:01:30 +0000</pubDate>
       <sparkle:version>0.0.38</sparkle:version>
