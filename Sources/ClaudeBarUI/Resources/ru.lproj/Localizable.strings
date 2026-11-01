@@ -42,8 +42,8 @@
 "setup.sessionKeyPlaceholder" = "Вставьте sessionKey сюда...";
 "setup.title" = "Настройка ClaudeBar";
 "tier.max" = "Max";
-"tier.max5x" = "Max 5×";
-"tier.max20x" = "Max 20×";
+"tier.max5x" = "Max";
+"tier.max20x" = "Ultra";
 "tier.pro" = "Pro";
 "tier.team" = "Team";
 "tier.enterprise" = "Enterprise";
@@ -61,6 +61,7 @@
 "usage.noData" = "Данных пока нет";
 "usage.opus" = "Opus";
 "usage.resetsIn %@" = "Сброс через %@";
+"usage.sevenDayWindow" = "7-дневное окно";
 "usage.sevenDayWindows" = "7-дневные окна";
 "usage.sonnet" = "Sonnet";
 "usage.title" = "Использование Claude";

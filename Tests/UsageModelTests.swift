@@ -155,6 +155,36 @@ struct UsageModelTests {
         #expect(!usage.additionalWindows.contains { $0.key.contains("eekly") || $0.key.contains("ession") })
     }
 
+    @Test func decodeUltraResponseWithoutSessionWindow() throws {
+        // Live 2026-11-01 payload from a verified Ultra account: Anthropic dropped
+        // the 5-hour window (2026-10-30), so `five_hour` is null and `limits` has
+        // no `session` entry. Everything else must still surface.
+        let json = """
+        {
+          "five_hour": null,
+          "seven_day": {"utilization": 11.0, "resets_at": "2026-11-06T20:00:00.452917+00:00", "limit_dollars": null, "used_dollars": null, "remaining_dollars": null, "locked_reason": null},
+          "seven_day_sonnet": null,
+          "iguana_necktie": {"utilization": 0.078, "resets_at": "2026-11-05T07:59:00+00:00", "limit_dollars": 250, "used_dollars": 0.19501, "remaining_dollars": 249.80499, "locked_reason": null},
+          "extra_usage": {"is_enabled": false, "monthly_limit": 100, "used_credits": 0.0, "utilization": 0.0, "currency": "USD"},
+          "limits": [
+            {"kind": "weekly_all", "group": "weekly", "percent": 11, "severity": "normal", "resets_at": "2026-11-06T20:00:00.452917+00:00", "scope": null, "is_active": true},
+            {"kind": "weekly_scoped", "group": "weekly", "percent": 2, "severity": "normal", "resets_at": "2026-11-06T20:00:00.453039+00:00", "scope": {"model": {"id": null, "display_name": "Fable"}, "surface": null}, "is_active": false}
+          ],
+          "spend": {"percent": 0, "enabled": false},
+          "member_dashboard_available": false,
+          "seven_day_breakdown": {"as_of": "2026-11-01T03:49:06.486487+00:00", "rows": [{"key": "claude_code", "display_name": "Claude Code", "percent": 100}]},
+          "weekly_scoped_shares": [{"limit_index": 1, "used_percent_of_weekly": 1, "allowance_percent_of_weekly": 50}]
+        }
+        """.data(using: .utf8)!
+
+        let usage = try ClaudeAPIClient.parseUsageResponse(data: json)
+
+        #expect(usage.fiveHour == nil)
+        #expect(abs(usage.sevenDay.utilization - 0.11) < 0.0001)
+        #expect(usage.additionalWindows.map(\.key) == ["sevenDayFable", "iguanaNecktie"])
+        #expect(usage.additionalWindows[1].limitDollars == 250)
+    }
+
     @Test func humanizesUnknownCodenames() {
         #expect(AdditionalWindow(key: "amberLadder", utilization: 0, resetsAt: nil).displayName == "Amber Ladder")
         #expect(AdditionalWindow(key: "iguanaNecktie", utilization: 0, resetsAt: nil).displayName == "Iguana Necktie")

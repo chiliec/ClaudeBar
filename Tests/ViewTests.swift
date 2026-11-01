@@ -281,6 +281,34 @@ struct UsageDetailViewHeaderTests {
         #expect(throws: (any Error).self) { try inspected.find(text: "Design") }
     }
 
+    @Test func promotesWeeklyTotalWhenNoFiveHourWindow() throws {
+        // Verified Ultra accounts have no 5-hour window: the big bar shows the
+        // weekly total instead, and the slim "Total" row is not repeated.
+        let state = makeState()
+        state.usage = UsageResponse(
+            fiveHour: nil,
+            sevenDay: WindowUsage(utilization: 0.11, resetsAt: nil),
+            additionalWindows: [AdditionalWindow(key: "sevenDayFable", utilization: 0.02, resetsAt: nil, explicitLabel: "Fable", isModelScoped: true)]
+        )
+        let inspected = try UsageDetailView(state: state).inspect()
+        _ = try inspected.find(text: "7-Day Window")
+        _ = try inspected.find(text: "Fable")
+        #expect(throws: (any Error).self) { try inspected.find(text: "5-Hour Window") }
+        #expect(throws: (any Error).self) { try inspected.find(text: "Total") }
+    }
+
+    @Test func showsFiveHourBarAndTotalRowWhenWindowPresent() throws {
+        let state = makeState()
+        state.usage = UsageResponse(
+            fiveHour: WindowUsage(utilization: 0.5, resetsAt: nil),
+            sevenDay: WindowUsage(utilization: 0.12, resetsAt: nil)
+        )
+        let inspected = try UsageDetailView(state: state).inspect()
+        _ = try inspected.find(text: "5-Hour Window")
+        _ = try inspected.find(text: "Total")
+        #expect(throws: (any Error).self) { try inspected.find(text: "7-Day Window") }
+    }
+
     @Test func surfacesCodenamedDollarPoolRow() throws {
         let state = makeState()
         state.usage = UsageResponse(

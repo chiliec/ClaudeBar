@@ -7,11 +7,13 @@ struct UsageDetailView: View {
         VStack(spacing: 0) {
             header
             if let usage = state.usage {
-                fiveHourSection(usage)
-                Divider()
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                sevenDaySection(usage)
+                primarySection(usage)
+                if usage.fiveHour != nil || !usage.additionalWindows.isEmpty {
+                    Divider()
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+                    sevenDaySection(usage)
+                }
                 if let extra = usage.extraUsage, extra.isEnabled,
                    let used = extra.usedCredits, let limit = extra.monthlyLimit, limit > 0 {
                     Divider()
@@ -124,17 +126,22 @@ struct UsageDetailView: View {
         .fixedSize()
     }
 
-    private func fiveHourSection(_ usage: UsageResponse) -> some View {
+    /// The big bar: the 5-hour window when the plan has one, else the 7-day
+    /// total (verified Ultra accounts have no session window since 2026-10-30).
+    /// Mirrors `AppState.menuBarUtilization` so the panel headline always
+    /// matches the menu bar ring.
+    private func primarySection(_ usage: UsageResponse) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            let utilization = usage.fiveHour?.utilization ?? 0
+            let window = usage.fiveHour ?? usage.sevenDay
+            let utilization = window.utilization
             let color = UsageColor.forUtilization(utilization).swiftUIColor
 
             HStack {
-                Text("usage.fiveHourWindow", bundle: .module)
+                Text(usage.fiveHour != nil ? "usage.fiveHourWindow" : "usage.sevenDayWindow", bundle: .module)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                if let reset = usage.fiveHour?.resetsAt {
+                if let reset = window.resetsAt {
                     Text("usage.resetsIn \(ResetDuration.string(from: reset))", bundle: .module)
                         .font(.subheadline)
                         .foregroundStyle(.tertiary)
@@ -169,7 +176,10 @@ struct UsageDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            slimBar(label: String(localized: "usage.total", bundle: .module), utilization: usage.sevenDay.utilization, resetDate: usage.sevenDay.resetsAt, color: .blue)
+            // The total is already the big bar when there is no 5-hour window.
+            if usage.fiveHour != nil {
+                slimBar(label: String(localized: "usage.total", bundle: .module), utilization: usage.sevenDay.utilization, resetDate: usage.sevenDay.resetsAt, color: .blue)
+            }
 
             // Per-model windows and codenamed credit pools are decoded generically
             // (see `UsageResponse.additionalWindows`). We render whatever the API
