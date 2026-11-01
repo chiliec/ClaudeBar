@@ -11,6 +11,9 @@ public struct UsageResponse: Codable {
     /// generically so Anthropic's frequent reshuffles surface automatically
     /// instead of silently disappearing. Only non-null windows are kept.
     public let additionalWindows: [AdditionalWindow]
+    /// Share of the weekly window used per surface (Claude Code, Chats, Cowork,
+    /// Other), from `seven_day_breakdown.rows`. Empty when the API omits it.
+    public let sevenDayBreakdown: [BreakdownRow]
 
     /// Backward-compatible typed accessors. The per-model windows now live in
     /// `additionalWindows`; these look them up by their (camelCased) API key.
@@ -30,11 +33,13 @@ public struct UsageResponse: Codable {
         sevenDayOpus: WindowUsage? = nil,
         sevenDayOmelette: WindowUsage? = nil,
         additionalWindows: [AdditionalWindow] = [],
-        extraUsage: ExtraUsage? = nil
+        extraUsage: ExtraUsage? = nil,
+        sevenDayBreakdown: [BreakdownRow] = []
     ) {
         self.fiveHour = fiveHour
         self.sevenDay = sevenDay
         self.extraUsage = extraUsage
+        self.sevenDayBreakdown = sevenDayBreakdown
         var windows = additionalWindows
         // Fold the legacy convenience params into the generic collection so
         // existing call sites (tests, #Preview) keep working unchanged.
@@ -51,7 +56,9 @@ public struct UsageResponse: Codable {
         self.extraUsage = try container.decodeIfPresent(ExtraUsage.self, forKey: DynamicCodingKey("extraUsage"))
 
         // Keys arrive camelCased (decoder uses `.convertFromSnakeCase`).
-        let structured: Set<String> = ["fiveHour", "sevenDay", "extraUsage", "limits", "spend"]
+        let structured: Set<String> = ["fiveHour", "sevenDay", "extraUsage", "limits", "spend", "sevenDayBreakdown"]
+        struct Breakdown: Decodable { let rows: [BreakdownRow] }
+        self.sevenDayBreakdown = (try? container.decode(Breakdown.self, forKey: DynamicCodingKey("sevenDayBreakdown")))?.rows ?? []
         var windows: [AdditionalWindow] = []
         for key in container.allKeys where !structured.contains(key.stringValue) {
             if (try? container.decodeNil(forKey: key)) == true { continue }
@@ -95,7 +102,7 @@ public struct UsageResponse: Codable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case fiveHour, sevenDay, extraUsage, additionalWindows
+        case fiveHour, sevenDay, extraUsage, additionalWindows, sevenDayBreakdown
     }
 
     /// Max plans get an `extra_usage` credit pool; Pro plans don't. Cleanest
@@ -103,6 +110,20 @@ public struct UsageResponse: Codable {
     public var isMaxTier: Bool {
         guard let extra = extraUsage, extra.isEnabled else { return false }
         return (extra.monthlyLimit ?? 0) > 0
+    }
+}
+
+/// One row of `seven_day_breakdown`: which surface used how much of the
+/// weekly window. `percent` is the API's 0–100 share; rows sum to 100.
+public struct BreakdownRow: Codable, Equatable {
+    public let key: String
+    public let displayName: String
+    public let percent: Int
+
+    public init(key: String, displayName: String, percent: Int) {
+        self.key = key
+        self.displayName = displayName
+        self.percent = percent
     }
 }
 

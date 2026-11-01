@@ -295,6 +295,33 @@ struct UsageDetailViewHeaderTests {
         _ = try inspected.find(text: "Fable")
         #expect(throws: (any Error).self) { try inspected.find(text: "5-Hour Window") }
         #expect(throws: (any Error).self) { try inspected.find(text: "Total") }
+        // The weekly header would just repeat the big bar's label.
+        #expect(throws: (any Error).self) { try inspected.find(text: "7-Day Windows") }
+    }
+
+    @Test func showsWeeklyBreakdownBySurface() throws {
+        let rows = [
+            BreakdownRow(key: "claude_code", displayName: "Claude Code", percent: 81),
+            BreakdownRow(key: "chat", displayName: "Chats", percent: 2),
+            BreakdownRow(key: "cowork", displayName: "Cowork", percent: 17),
+            BreakdownRow(key: "other", displayName: "Other", percent: 0),
+        ]
+        #expect(UsageDetailView.breakdownText(rows) == "Claude Code 81% · Cowork 17% · Chats 2%")
+        #expect(UsageDetailView.breakdownText([BreakdownRow(key: "other", displayName: "Other", percent: 0)]) == nil)
+        #expect(UsageDetailView.breakdownText([]) == nil)
+
+        // Rendered under the Total row when the 5-hour bar is present...
+        let state = makeState()
+        state.usage = UsageResponse(
+            fiveHour: WindowUsage(utilization: 0.5, resetsAt: nil),
+            sevenDay: WindowUsage(utilization: 0.82, resetsAt: nil),
+            sevenDayBreakdown: rows
+        )
+        _ = try UsageDetailView(state: state).inspect().find(text: "Claude Code 81% · Cowork 17% · Chats 2%")
+
+        // ...and under the big bar when the weekly total is promoted.
+        state.usage = UsageResponse(fiveHour: nil, sevenDay: WindowUsage(utilization: 0.11, resetsAt: nil), sevenDayBreakdown: rows)
+        _ = try UsageDetailView(state: state).inspect().find(text: "Claude Code 81% · Cowork 17% · Chats 2%")
     }
 
     @Test func showsFiveHourBarAndTotalRowWhenWindowPresent() throws {
@@ -305,6 +332,7 @@ struct UsageDetailViewHeaderTests {
         )
         let inspected = try UsageDetailView(state: state).inspect()
         _ = try inspected.find(text: "5-Hour Window")
+        _ = try inspected.find(text: "7-Day Windows")
         _ = try inspected.find(text: "Total")
         #expect(throws: (any Error).self) { try inspected.find(text: "7-Day Window") }
     }

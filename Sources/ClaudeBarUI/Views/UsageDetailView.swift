@@ -165,20 +165,44 @@ struct UsageDetailView: View {
                 }
             }
             .frame(height: 20)
+
+            if usage.fiveHour == nil {
+                breakdownLine(usage)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
     }
 
+    /// "Claude Code 81% · Cowork 17% · Chats 2%": which surfaces used the week.
+    /// Sits directly under whichever bar shows the weekly total.
+    @ViewBuilder
+    private func breakdownLine(_ usage: UsageResponse) -> some View {
+        if let text = Self.breakdownText(usage.sevenDayBreakdown) {
+            Text(verbatim: text)
+                .font(.subheadline)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
+    }
+
+    /// Non-zero rows, largest first. `nil` when there is nothing to say.
+    static func breakdownText(_ rows: [BreakdownRow]) -> String? {
+        let used = rows.filter { $0.percent > 0 }.sorted { $0.percent > $1.percent }
+        guard !used.isEmpty else { return nil }
+        return used.map { "\($0.displayName) \($0.percent)%" }.joined(separator: " · ")
+    }
+
     private func sevenDaySection(_ usage: UsageResponse) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("usage.sevenDayWindows", bundle: .module)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            // The total is already the big bar when there is no 5-hour window.
+            // The total (and this header) is already the big bar when there is
+            // no 5-hour window.
             if usage.fiveHour != nil {
+                Text("usage.sevenDayWindows", bundle: .module)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 slimBar(label: String(localized: "usage.total", bundle: .module), utilization: usage.sevenDay.utilization, resetDate: usage.sevenDay.resetsAt, color: .blue)
+                breakdownLine(usage)
             }
 
             // Per-model windows and codenamed credit pools are decoded generically

@@ -183,6 +183,14 @@ struct UsageModelTests {
         #expect(abs(usage.sevenDay.utilization - 0.11) < 0.0001)
         #expect(usage.additionalWindows.map(\.key) == ["sevenDayFable", "iguanaNecktie"])
         #expect(usage.additionalWindows[1].limitDollars == 250)
+        #expect(usage.sevenDayBreakdown == [BreakdownRow(key: "claude_code", displayName: "Claude Code", percent: 100)])
+    }
+
+    @Test func breakdownIsEmptyWhenAbsent() throws {
+        let json = """
+        { "seven_day": { "utilization": 5.0, "resets_at": null } }
+        """.data(using: .utf8)!
+        #expect(try ClaudeAPIClient.parseUsageResponse(data: json).sevenDayBreakdown.isEmpty)
     }
 
     @Test func humanizesUnknownCodenames() {
