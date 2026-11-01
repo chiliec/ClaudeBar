@@ -18,7 +18,7 @@ Three-layer: Views → `AppState` (`@Observable` class) → Services
 - `OAuthService`: PKCE sign-in through the browser (client ID is Claude Code's), token refresh. `OAuthCallbackServer` is a one-shot `NWListener` on an OS-assigned ephemeral port (the authorize URL must match Claude Code CLI's byte-for-byte — see `authorizeURL`)
 - `AccountStore`: all accounts + the active pointer in one Keychain blob (`oauth_accounts`); a legacy single-credential `oauth_credentials` blob is migrated on first load. `AppState` polls only the active account — switching accounts stops the old poll and starts a new one
 - Menu bar item and panel are hand-built in `AppDelegate`, not `MenuBarExtra` — the latter gives no control over panel placement, so it drifts sideways as the label's width changes. The panel hangs from the item's left edge (`menuBarPanelOrigin`), and the item has a **fixed** width so that edge stays put: menu bar items grow leftward, so a resizing item moves itself
-- `KeychainService`: struct with injectable `serviceName`. Tests use `com.claudebar.test`.
+- `KeychainService`: struct with injectable `serviceName`. Tests use `com.claudebar.test.<suite>`.
 - **API quirk**: utilization returned 0–100; `WindowUsage` normalizes to 0–1.0 on decode (values > 1.0 divided by 100)
 - Date parsing: custom decoder handles ISO 8601 with/without fractional seconds (`.000Z` vs `Z`)
 
@@ -26,8 +26,8 @@ Three-layer: Views → `AppState` (`@Observable` class) → Services
 Two targets: `ClaudeBarUI` (library: all models/services/views) + `ClaudeBar` (thin `@main` executable). This split enables SwiftUI `#Preview` — previews don't work in executable targets. `ClaudeBarUI` types are `public` so previews and the executable target can reach them; implementation-only helpers with no callers outside the module (e.g. `OAuthCallbackServer`) stay internal.
 
 ## Testing
-- Run `swift test --no-parallel` — suites share the test Keychain service, so parallel runs are flaky
-- `makeState()` — injects test keychain (`com.claudebar.test`), clears before each test
+- Each suite that touches the Keychain uses its own service (`com.claudebar.test.<suite>`) and is `.serialized`, so plain `swift test` runs in parallel safely. New Keychain-backed suites must follow the same pattern.
+- `makeState()` — injects that suite's test keychain, clears before each test
 - ViewInspector: `@retroactive Inspectable` conformance required (views and protocol in different modules)
 - `CoreData: XPC: sendMessage: failed` in test output — harmless
 

@@ -6,10 +6,10 @@ import ViewInspector
 // MARK: - PopoverView Tests
 
 @MainActor
-@Suite
+@Suite(.serialized)
 struct PopoverViewTests {
     private func makeState() -> AppState {
-        AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        AppState(keychain: KeychainService(serviceName: "com.claudebar.test.popover"))
     }
 
     private func authenticated(_ state: AppState) -> AppState {
@@ -105,10 +105,10 @@ struct PopoverViewTests {
 // MARK: - SetupView Tests
 
 @MainActor
-@Suite
+@Suite(.serialized)
 struct SetupViewTests {
     private func makeState() -> AppState {
-        AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        AppState(keychain: KeychainService(serviceName: "com.claudebar.test.setup"))
     }
 
     @Test func showsTitle() throws {
@@ -163,10 +163,10 @@ struct SetupViewTests {
 // MARK: - SessionExpiredView Tests
 
 @MainActor
-@Suite
+@Suite(.serialized)
 struct SessionExpiredViewTests {
     private func makeState() -> AppState {
-        AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        AppState(keychain: KeychainService(serviceName: "com.claudebar.test.sessionexpired"))
     }
 
     @Test func showsGenericTitleWhenNoOrgCached() throws {
@@ -197,10 +197,10 @@ struct SessionExpiredViewTests {
 // MARK: - UsageDetailView Header Tests
 
 @MainActor
-@Suite
+@Suite(.serialized)
 struct UsageDetailViewHeaderTests {
     private func makeState() -> AppState {
-        AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        AppState(keychain: KeychainService(serviceName: "com.claudebar.test.usagedetail"))
     }
 
     @Test func showsOrgNameFromProfileInHeader() throws {
@@ -369,10 +369,10 @@ struct UsageDetailViewHeaderTests {
 // MARK: - SettingsView Tests
 
 @MainActor
-@Suite
+@Suite(.serialized)
 struct SettingsViewTests {
     private func makeState() -> AppState {
-        AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        AppState(keychain: KeychainService(serviceName: "com.claudebar.test.settings"))
     }
 
     private func authenticated(_ state: AppState) -> AppState {

@@ -16,4 +16,4 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s "$XCODE_APP"
       - name: Run tests
-        run: swift test --no-parallel
+        run: swift test

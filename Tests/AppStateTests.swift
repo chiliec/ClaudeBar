@@ -6,7 +6,7 @@ import Testing
 @Suite(.serialized)
 struct AppStateTests {
     private func makeState() -> AppState {
-        let state = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        let state = AppState(keychain: KeychainService(serviceName: "com.claudebar.test.appstate"))
         // Clean slate
         state.wipeAllState()
         return state
@@ -35,7 +35,7 @@ struct AppStateTests {
         #expect(state.isAuthenticated)
 
         // A fresh state over the same keychain sees them
-        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test.appstate"))
         #expect(reloaded.credentials == creds)
         reloaded.wipeAllState()
     }
@@ -46,7 +46,7 @@ struct AppStateTests {
         let newer = OAuthCredentials(accessToken: "sk-at-new", refreshToken: "sk-rt-new",
                                      expiresAt: Date().addingTimeInterval(7200))
         try state.saveCredentials(newer)                       // simulate refresh write-back
-        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test.appstate"))
         #expect(reloaded.credentials == newer)
         #expect(reloaded.accounts.count == 1)                  // upsert, not duplicate
         reloaded.wipeAllState()
@@ -61,7 +61,7 @@ struct AppStateTests {
         let creds = testCredentials()
         try state.saveCredentials(creds)
 
-        let deferred = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"),
+        let deferred = AppState(keychain: KeychainService(serviceName: "com.claudebar.test.appstate"),
                                 loadNow: false)
         #expect(deferred.credentials == nil)
         await deferred.start()
@@ -198,7 +198,7 @@ struct AppStateTests {
         #expect(!state.isAuthenticated)
         #expect(state.usage == nil)
         #expect(state.organizationDetails == nil)
-        let fresh = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        let fresh = AppState(keychain: KeychainService(serviceName: "com.claudebar.test.appstate"))
         #expect(fresh.credentials == nil)
     }
 
@@ -227,7 +227,7 @@ struct AppStateTests {
         #expect(state.activeID != nil)
         #expect(state.activeAccount?.expiredAt != nil)
 
-        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test.appstate"))
         #expect(reloaded.accounts.count == 1)
         #expect(reloaded.accounts.first?.expiredAt != nil)
         #expect(!reloaded.isAuthenticated)
@@ -235,7 +235,7 @@ struct AppStateTests {
     }
 
     @Test func loadCredentialsDropsLegacyCookieItem() throws {
-        let keychain = KeychainService(serviceName: "com.claudebar.test")
+        let keychain = KeychainService(serviceName: "com.claudebar.test.appstate")
         try keychain.save(account: "credentials", value: "sk-old\u{0}org-old")
 
         let state = AppState(keychain: keychain)
@@ -292,7 +292,7 @@ struct AppStateTests {
     @Test func loadCredentialsRestoresPlatformKeyFromKeychain() throws {
         let state = makeState()
         // Pre-seed keychain via a fresh service instance using the same test name
-        let kc = KeychainService(serviceName: "com.claudebar.test")
+        let kc = KeychainService(serviceName: "com.claudebar.test.appstate")
         try kc.save(account: "platform_credentials", value: "sk-platform-restored")
 
         state.loadCredentials()
@@ -359,7 +359,7 @@ struct AppStateTests {
         try state.saveCredentials(testCredentials())
         state.handleSessionExpired()
 
-        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test"))
+        let reloaded = AppState(keychain: KeychainService(serviceName: "com.claudebar.test.appstate"))
         #expect(reloaded.error == .sessionExpired)
         #expect(reloaded.credentials == nil)
         reloaded.wipeAllState()
@@ -379,7 +379,7 @@ struct AppStateTests {
     @Test func loadWithoutActivePointerActivatesFirstAccount() throws {
         // Blob shape left behind by 0.0.35 after an expiry: accounts present,
         // activeID nil. Must not route to the first-run Setup screen.
-        let kc = KeychainService(serviceName: "com.claudebar.test")
+        let kc = KeychainService(serviceName: "com.claudebar.test.appstate")
         try AccountStore.save(
             AccountSet(accounts: [account("u1", "a@x.com"), account("u2", "b@x.com")], activeID: nil),
             to: kc)
@@ -517,7 +517,7 @@ struct AppStateTests {
 
     @Test func disconnectPlatformDeletesKeychainEntryAndClearsState() throws {
         let state = makeState()
-        let kc = KeychainService(serviceName: "com.claudebar.test")
+        let kc = KeychainService(serviceName: "com.claudebar.test.appstate")
         try kc.save(account: "platform_credentials", value: "sk-platform")
         state.platformSessionKey = "sk-platform"
         state.platformCredits = PlatformCredits(amountCents: 189, currency: "USD")

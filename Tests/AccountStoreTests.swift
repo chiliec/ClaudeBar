@@ -4,7 +4,7 @@ import Testing
 
 @Suite(.serialized)
 struct AccountStoreTests {
-    private let keychain = KeychainService(serviceName: "com.claudebar.test")
+    private let keychain = KeychainService(serviceName: "com.claudebar.test.accountstore")
 
     private func wipe() {
         try? keychain.delete(account: AccountStore.keychainAccount)

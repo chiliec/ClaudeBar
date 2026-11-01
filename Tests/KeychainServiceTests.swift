@@ -3,7 +3,7 @@ import Testing
 
 @Suite(.serialized)
 struct KeychainServiceTests {
-    let service = KeychainService(serviceName: "com.claudebar.test")
+    let service = KeychainService(serviceName: "com.claudebar.test.keychain")
 
     /// A release build must land on the production service and nothing else:
     /// getting this wrong points every installed copy at an empty keychain item

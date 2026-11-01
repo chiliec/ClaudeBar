@@ -73,15 +73,36 @@ if [ ! -f "$CASK_FILE" ]; then
     exit 1
 fi
 
+# ---- Refuse to start on a half-finished release -----------------------------
+# Info.plist and appcast.xml are only ever edited by this script. If either is
+# dirty, a previous run died between its bump and its commit; the tests below
+# would then fail on the version mismatch. The EXIT trap further down restores
+# both on failure, so this only triggers after a kill -9 or a crashed shell.
+
+if ! git diff --quiet -- Sources/ClaudeBar/Info.plist "$APPCAST_FILE"; then
+    echo "ERROR: Info.plist or appcast.xml has uncommitted changes from an"
+    echo "  earlier release attempt. Restore them, then re-run:"
+    echo "    git checkout -- Sources/ClaudeBar/Info.plist $APPCAST_FILE"
+    exit 1
+fi
+
+RELEASE_COMMITTED=0
+NOTES_FILE=$(mktemp)
+cleanup() {
+    rm -f "$NOTES_FILE"
+    if [ "$RELEASE_COMMITTED" = 0 ]; then
+        git checkout -- Sources/ClaudeBar/Info.plist "$APPCAST_FILE" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
 # ---- Run tests against current state ---------------------------------------
 # Tests validate that the previously-committed Info.plist + appcast are
 # consistent, so we run them BEFORE bumping the version (which would break
 # AppcastTests.topmostItemMatchesInfoPlistVersion until we insert the new item).
 
 echo "==> Running tests"
-# --no-parallel: suites share the test Keychain service, parallel runs are flaky
-# (see CLAUDE.md Testing).
-swift test --no-parallel 2>&1 | tail -3
+swift test 2>&1 | tail -3
 
 # ---- Bump version in Info.plist --------------------------------------------
 
@@ -218,6 +239,16 @@ if [ -n "$CHANGES_FILE" ]; then
 fi
 
 echo "==> Inserting <item> into $APPCAST_FILE"
+# A re-run at the same version (after the commit step succeeded but a later
+# step failed) rebuilds the zip, so its signature and length change. Drop the
+# stale <item> for this version first rather than stacking a second one.
+TMP_APPCAST=$(mktemp)
+awk -v ver="<sparkle:version>$VERSION</sparkle:version>" '
+    /<item>/ { buf = ""; inItem = 1 }
+    inItem { buf = buf $0 "\n"; if ($0 ~ /<\/item>/) { if (index(buf, ver) == 0) printf "%s", buf; inItem = 0 }; next }
+    { print }
+' "$APPCAST_FILE" > "$TMP_APPCAST"
+mv "$TMP_APPCAST" "$APPCAST_FILE"
 # Write the new <item> to a temp file because BSD awk can't take multi-line -v values.
 NEW_ITEM_FILE=$(mktemp)
 cat > "$NEW_ITEM_FILE" <<ITEM
@@ -250,6 +281,7 @@ rm -f "$NEW_ITEM_FILE"
 echo "==> Committing release in ClaudeBar repo"
 git add Sources/ClaudeBar/Info.plist "$APPCAST_FILE"
 git diff --cached --quiet || git commit -m "release: v$VERSION"
+RELEASE_COMMITTED=1
 # -m: with tag.gpgsign on, git makes an annotated (signed) tag, which needs a
 # message; without one it aborts when no editor is available.
 git tag -f -m "v$VERSION" "v$VERSION"
@@ -268,8 +300,6 @@ git push origin --tags --force
 # ---- GitHub release --------------------------------------------------------
 
 echo "==> Creating GitHub release"
-NOTES_FILE=$(mktemp)
-trap 'rm -f "$NOTES_FILE"' EXIT
 if [ -n "$CHANGES_FILE" ]; then
     cat "$CHANGES_FILE" > "$NOTES_FILE"
 else

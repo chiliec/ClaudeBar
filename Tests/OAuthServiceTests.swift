@@ -88,7 +88,7 @@ struct OAuthCallbackParsingTests {
     }
 }
 
-@Suite
+@Suite(.serialized)
 struct OAuthTokenTests {
     @Test func parsesTokenResponse() throws {
         let json = """
@@ -129,7 +129,7 @@ struct OAuthTokenTests {
     }
 
     @Test func roundTripsThroughKeychain() throws {
-        let keychain = KeychainService(serviceName: "com.claudebar.test")
+        let keychain = KeychainService(serviceName: "com.claudebar.test.oauthtoken")
         OAuthService.clear(from: keychain)
         let creds = OAuthCredentials(
             accessToken: "sk-at-123",
