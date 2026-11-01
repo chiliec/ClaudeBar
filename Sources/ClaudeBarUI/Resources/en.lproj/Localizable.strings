@@ -66,6 +66,7 @@
 "usage.sonnet" = "Sonnet";
 "usage.title" = "Claude Usage";
 "usage.total" = "Total";
+"usage.usedBy %@" = "Used by: %@";
 "usage.usageCredits" = "Usage Credits";
 "usage.updatedAgo %@" = "Updated %@ ago";
 "oauthError.listenerFailed" = "Couldn't start the local sign-in listener. Try again.";

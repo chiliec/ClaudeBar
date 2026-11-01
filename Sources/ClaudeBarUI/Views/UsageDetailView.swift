@@ -174,7 +174,7 @@ struct UsageDetailView: View {
         .padding(.bottom, 12)
     }
 
-    /// "Claude Code 81% · Cowork 17% · Chats 2%": which surfaces used the week.
+    /// "Used by: Claude Code 81% · Cowork 17% · Chats 2%": which surfaces used the week.
     /// Sits directly under whichever bar shows the weekly total.
     @ViewBuilder
     private func breakdownLine(_ usage: UsageResponse) -> some View {
@@ -192,7 +192,8 @@ struct UsageDetailView: View {
     static func breakdownText(_ rows: [BreakdownRow]) -> String? {
         let used = rows.filter { $0.percent > 0 }.sorted { $0.percent > $1.percent }
         guard !used.isEmpty else { return nil }
-        return used.map { "\($0.displayName) \($0.percent)%" }.joined(separator: " · ")
+        let list = used.map { "\($0.displayName) \($0.percent)%" }.joined(separator: " · ")
+        return String(localized: "usage.usedBy \(list)", bundle: .module)
     }
 
     private func sevenDaySection(_ usage: UsageResponse) -> some View {

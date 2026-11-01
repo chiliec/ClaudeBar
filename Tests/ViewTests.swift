@@ -306,7 +306,7 @@ struct UsageDetailViewHeaderTests {
             BreakdownRow(key: "cowork", displayName: "Cowork", percent: 17),
             BreakdownRow(key: "other", displayName: "Other", percent: 0),
         ]
-        #expect(UsageDetailView.breakdownText(rows) == "Claude Code 81% · Cowork 17% · Chats 2%")
+        #expect(UsageDetailView.breakdownText(rows) == "Used by: Claude Code 81% · Cowork 17% · Chats 2%")
         #expect(UsageDetailView.breakdownText([BreakdownRow(key: "other", displayName: "Other", percent: 0)]) == nil)
         #expect(UsageDetailView.breakdownText([]) == nil)
 
@@ -317,11 +317,11 @@ struct UsageDetailViewHeaderTests {
             sevenDay: WindowUsage(utilization: 0.82, resetsAt: nil),
             sevenDayBreakdown: rows
         )
-        _ = try UsageDetailView(state: state).inspect().find(text: "Claude Code 81% · Cowork 17% · Chats 2%")
+        _ = try UsageDetailView(state: state).inspect().find(text: "Used by: Claude Code 81% · Cowork 17% · Chats 2%")
 
         // ...and under the big bar when the weekly total is promoted.
         state.usage = UsageResponse(fiveHour: nil, sevenDay: WindowUsage(utilization: 0.11, resetsAt: nil), sevenDayBreakdown: rows)
-        _ = try UsageDetailView(state: state).inspect().find(text: "Claude Code 81% · Cowork 17% · Chats 2%")
+        _ = try UsageDetailView(state: state).inspect().find(text: "Used by: Claude Code 81% · Cowork 17% · Chats 2%")
     }
 
     @Test func showsFiveHourBarAndTotalRowWhenWindowPresent() throws {

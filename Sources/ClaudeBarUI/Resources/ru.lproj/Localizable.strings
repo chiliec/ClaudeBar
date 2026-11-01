@@ -66,6 +66,7 @@
 "usage.sonnet" = "Sonnet";
 "usage.title" = "Использование Claude";
 "usage.total" = "Всего";
+"usage.usedBy %@" = "Использовано: %@";
 "usage.usageCredits" = "Кредитные лимиты";
 "usage.updatedAgo %@" = "Обновлено %@ назад";
 "oauthError.listenerFailed" = "Не удалось запустить локальный обработчик входа. Попробуйте снова.";
