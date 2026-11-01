@@ -179,10 +179,12 @@ struct UsageDetailView: View {
     @ViewBuilder
     private func breakdownLine(_ usage: UsageResponse) -> some View {
         if let text = Self.breakdownText(usage.sevenDayBreakdown) {
+            // Four surfaces with values outgrow the panel width; wrap rather
+            // than truncate. The panel sizes to its content.
             Text(verbatim: text)
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
