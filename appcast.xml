@@ -6,6 +6,18 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.41</title>
+      <pubDate>Sun, 01 Nov 2026 04:20:40 +0000</pubDate>
+      <sparkle:version>0.0.41</sparkle:version>
+      <sparkle:shortVersionString>0.0.41</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Clearer weekly breakdown
+
+The breakdown line now starts with "Used by:", so "Claude Code 100%" reads as
+"all of this week's usage came from Claude Code", not as a full limit.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.41/ClaudeBar.zip" sparkle:edSignature="XMABuoA9epVuQUtMN8rF0VQLsIB6hU7UI5QRhJ6JtUs9UnyrLyl5XPJBE7yi6pe19oHVYgwvwXBewlx89eToCw==" length="3660102" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.40</title>
       <pubDate>Sun, 01 Nov 2026 04:16:25 +0000</pubDate>
       <sparkle:version>0.0.40</sparkle:version>
