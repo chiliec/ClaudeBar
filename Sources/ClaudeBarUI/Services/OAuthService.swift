@@ -279,12 +279,17 @@ public struct Account: Codable, Equatable, Identifiable, Sendable {
     /// Set when the refresh token died. Optional so blobs written before this
     /// field existed still decode; nil means the account is healthy.
     public var expiredAt: Date?
+    /// True for the entry borrowing Claude Code CLI's session. Optional so
+    /// blobs written before this field existed still decode.
+    public var isClaudeCode: Bool?
 
-    public init(id: String, label: String, credentials: OAuthCredentials, expiredAt: Date? = nil) {
+    public init(id: String, label: String, credentials: OAuthCredentials,
+                expiredAt: Date? = nil, isClaudeCode: Bool? = nil) {
         self.id = id
         self.label = label
         self.credentials = credentials
         self.expiredAt = expiredAt
+        self.isClaudeCode = isClaudeCode
     }
 }
 
