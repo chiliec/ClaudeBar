@@ -1,3 +1,4 @@
+"account.claudeCodeSuffix" = " · Claude Code";
 "account.expiredSuffix" = " · истекла";
 "action.addAccount" = "Добавить аккаунт…";
 "action.cancel" = "Отмена";
@@ -10,6 +11,7 @@
 "action.remove" = "Удалить";
 "action.signIn" = "Войти через Claude";
 "action.update" = "Обновить";
+"action.useClaudeCode" = "Использовать аккаунт Claude Code";
 "header.openSettings" = "Настройки…";
 "apiError.httpError %lld" = "HTTP %lld";
 "apiError.invalidResponse" = "Неверный ответ";

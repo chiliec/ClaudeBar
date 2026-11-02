@@ -249,6 +249,13 @@ struct UsageDetailViewHeaderTests {
         state.wipeAllState()
     }
 
+    @Test func menuLabelsClaudeCodeAccount() {
+        let acct = Account(id: AppState.claudeCodeAccountID, label: "a@x.com",
+                           credentials: OAuthCredentials(accessToken: "a", refreshToken: "b", expiresAt: Date()),
+                           isClaudeCode: true)
+        #expect(UsageDetailView.menuLabel(for: acct) == "a@x.com · Claude Code")
+    }
+
     // MARK: - Per-model 7-day window rows
 
     @Test func showsSonnetAndDesignRowsWhenReported() throws {

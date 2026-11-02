@@ -82,11 +82,18 @@ struct UsageDetailView: View {
         label.background(.quaternary).clipShape(Capsule())
     }
 
-    /// Menu row text: the account's email, plus an "expired" suffix when its
-    /// session is known-dead so the user can tell which entries still work.
+    /// Menu row text: the account's email, plus a "Claude Code" suffix for the
+    /// borrowed CLI session, plus an "expired" suffix when its session is
+    /// known-dead so the user can tell which entries still work.
     static func menuLabel(for account: Account) -> String {
-        guard account.expiredAt != nil else { return account.label }
-        return account.label + String(localized: "account.expiredSuffix", bundle: .module)
+        var label = account.label
+        if account.isClaudeCode == true {
+            label += String(localized: "account.claudeCodeSuffix", bundle: .module)
+        }
+        if account.expiredAt != nil {
+            label += String(localized: "account.expiredSuffix", bundle: .module)
+        }
+        return label
     }
 
     @ViewBuilder
@@ -110,6 +117,13 @@ struct UsageDetailView: View {
                 Task { await state.signIn() }
             } label: {
                 Text("action.addAccount", bundle: .module)
+            }
+            if !state.hasClaudeCodeAccount {
+                Button {
+                    Task { await state.addClaudeCodeAccount() }
+                } label: {
+                    Text("action.useClaudeCode", bundle: .module)
+                }
             }
         } label: {
             HStack(spacing: 4) {
@@ -374,7 +388,13 @@ struct UsageDetailView: View {
 
     private var footer: some View {
         HStack(spacing: 12) {
-            if let lastUpdated = state.lastUpdated {
+            if state.error == .claudeCodeStale, state.usage != nil {
+                // The error row only renders without usage; stale numbers need the hint here.
+                Text(state.error?.message ?? "")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            } else if let lastUpdated = state.lastUpdated {
                 Text("usage.updatedAgo \(lastUpdated, style: .relative)", bundle: .module)
                     .font(.subheadline)
                     .foregroundStyle(.tertiary)

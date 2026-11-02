@@ -1,3 +1,4 @@
+"account.claudeCodeSuffix" = " · Claude Code";
 "account.expiredSuffix" = " · expired";
 "action.addAccount" = "Add Account…";
 "action.cancel" = "Cancel";
@@ -10,6 +11,7 @@
 "action.remove" = "Remove";
 "action.signIn" = "Sign in with Claude";
 "action.update" = "Update";
+"action.useClaudeCode" = "Use Claude Code's Account";
 "header.openSettings" = "Settings…";
 "apiError.httpError %lld" = "HTTP %lld";
 "apiError.invalidResponse" = "Invalid response";
