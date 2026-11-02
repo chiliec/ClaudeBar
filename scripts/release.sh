@@ -57,7 +57,7 @@ if [ ! -x "$SIGN_UPDATE" ]; then
     exit 1
 fi
 
-if ! "$SIGN_UPDATE" --help 2>&1 | grep -qi "usage"; then
+if ! grep -qi "usage" <<<"$("$SIGN_UPDATE" --help 2>&1 || true)"; then
     echo "ERROR: $SIGN_UPDATE is not runnable. Try 'xattr -d com.apple.quarantine $SIGN_UPDATE'."
     exit 1
 fi
@@ -194,10 +194,13 @@ NOTARY_PROFILE="$NOTARY_PROFILE" ./scripts/notarize.sh "$BUNDLE_DIR"
 # Both are release-only: they need the stapled, Developer ID-signed bundle.
 
 echo "==> Verifying Gatekeeper assessment"
-if ! spctl -a -vvv -t exec "$BUNDLE_DIR" 2>&1 | grep -q "accepted"; then
+# Capture first: piping into `grep -q` under pipefail can SIGPIPE spctl and
+# report a failure for an accepted bundle.
+SPCTL_OUT=$(spctl -a -vvv -t exec "$BUNDLE_DIR" 2>&1 || true)
+if ! grep -q "accepted" <<<"$SPCTL_OUT"; then
     echo "ERROR: Gatekeeper rejects the notarized bundle -- users would see it"
     echo "  fail to launch. Full assessment:"
-    spctl -a -vvv -t exec "$BUNDLE_DIR" 2>&1 | sed 's/^/    /'
+    sed 's/^/    /' <<<"$SPCTL_OUT"
     exit 1
 fi
 
