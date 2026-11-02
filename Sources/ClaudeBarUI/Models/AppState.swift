@@ -312,11 +312,19 @@ public final class AppState {
 
     /// One login, one entry: an own-OAuth account for the same person is replaced.
     func insertClaudeCodeAccount(tokens: OAuthCredentials, identity: AccountIdentity) {
-        accounts.removeAll { $0.id == identity.uuid || $0.id == Self.claudeCodeAccountID }
+        accounts.removeAll { $0.id == Self.claudeCodeAccountID }
+        dropAccounts(matching: identity)
         accounts.append(Account(id: Self.claudeCodeAccountID, label: identity.email,
                                 credentials: tokens, isClaudeCode: true))
         activeID = Self.claudeCodeAccountID
         credentials = tokens
+    }
+
+    /// Own-OAuth entries for the person the CLI is logged in as — matched by email
+    /// too, since an older entry may carry a different uuid.
+    private func dropAccounts(matching identity: AccountIdentity) {
+        accounts.removeAll { $0.id != Self.claudeCodeAccountID
+            && ($0.id == identity.uuid || $0.label.caseInsensitiveCompare(identity.email) == .orderedSame) }
     }
 
     /// The borrowed session is never refreshed — rotating its refresh token would
@@ -342,8 +350,9 @@ public final class AppState {
             error = nil
             lastUpdated = Date()
             if organizationDetails == nil,
-               let profile = try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken),
-               let i = accounts.firstIndex(where: { $0.id == activeID }) {
+               let profile = try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken) {
+                dropAccounts(matching: profile.account)
+                guard let i = accounts.firstIndex(where: { $0.id == activeID }) else { return }
                 organizationDetails = profile.organization
                 accounts[i].label = profile.account.email
                 try? persistAccounts()

@@ -98,4 +98,18 @@ struct ClaudeCodeSessionTests {
         #expect(state.activeAccount?.label == "a@x.com")
         state.wipeAllState()
     }
+
+    @MainActor @Test func claudeCodeEntryReplacesSameEmailAccountWithDifferentUUID() {
+        let state = makeState()
+        // Own-OAuth account for the same person, but stored under a uuid that
+        // doesn't match what the CLI's profile fetch returns.
+        state.upsert(Account(id: "stale-uuid", label: "a@x.com", credentials: creds("own", expiresIn: 3600)))
+        state.upsert(Account(id: "u2", label: "b@x.com", credentials: creds("b", expiresIn: 3600)))
+
+        state.insertClaudeCodeAccount(tokens: creds("cli", expiresIn: 3600),
+                                      identity: AccountIdentity(uuid: "different-uuid", email: "a@x.com"))
+
+        #expect(state.accounts.map(\.id) == ["u2", AppState.claudeCodeAccountID])
+        state.wipeAllState()
+    }
 }
