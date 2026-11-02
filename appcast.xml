@@ -6,6 +6,21 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.42</title>
+      <pubDate>Mon, 02 Nov 2026 10:36:42 +0000</pubDate>
+      <sparkle:version>0.0.42</sparkle:version>
+      <sparkle:shortVersionString>0.0.42</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### Use Claude Code's account
+
+Already signed in to Claude Code? Pick "Use Claude Code's Account" from the
+account menu and ClaudeBar shows that account's usage, with no separate
+sign-in. It only reads Claude Code's login and never changes it, so Claude
+Code stays signed in. If Claude Code's session expires, ClaudeBar keeps the
+last numbers and asks you to run `claude` to refresh it.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.42/ClaudeBar.zip" sparkle:edSignature="dygUpim+FfkYaFRm1ta3GQAY/u3L96U8W84WzneZQai66JvjHrhjWqytmHRwgOxzcQko9fOyinuJEp6T4hyUBA==" length="3706097" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.41</title>
       <pubDate>Sun, 01 Nov 2026 04:20:40 +0000</pubDate>
       <sparkle:version>0.0.41</sparkle:version>
