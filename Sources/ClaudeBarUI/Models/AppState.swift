@@ -40,13 +40,18 @@ public final class AppState {
 
     // MARK: - Services
     private let keychain: any KeychainServicing
+    /// Claude Code CLI's own login. Read-only — see `ClaudeCodeSession`.
+    private let claudeCodeKeychain: any KeychainServicing
     private var pollTimer: Timer?
     public var pollInterval: TimeInterval = 300 // 5 minutes
 
     /// `loadNow: false` builds an empty state and leaves the Keychain alone; the
     /// app uses it and then calls `start()`. See there for why.
-    public init(keychain: any KeychainServicing = KeychainService(), loadNow: Bool = true) {
+    public init(keychain: any KeychainServicing = KeychainService(),
+                claudeCodeKeychain: any KeychainServicing = KeychainService(serviceName: ClaudeCodeSession.serviceName),
+                loadNow: Bool = true) {
         self.keychain = keychain
+        self.claudeCodeKeychain = claudeCodeKeychain
         guard loadNow else { return }
         loadCredentials()
         if isAuthenticated {
@@ -270,6 +275,89 @@ public final class AppState {
         error = .sessionExpired
     }
 
+    // MARK: - Claude Code session
+
+    public static let claudeCodeAccountID = "claude-code"
+
+    var activeIsClaudeCode: Bool { activeAccount?.isClaudeCode == true }
+    public var hasClaudeCodeAccount: Bool { accounts.contains { $0.id == Self.claudeCodeAccountID } }
+
+    /// Off the main thread: the first read of another app's item shows a Keychain prompt.
+    private func readClaudeCodeCredentials() async -> OAuthCredentials? {
+        let cli = claudeCodeKeychain
+        return await Task.detached { ClaudeCodeSession.load(from: cli) }.value
+    }
+
+    /// Adds (or re-adds) the entry borrowing the CLI's login and makes it active.
+    public func addClaudeCodeAccount() async {
+        isLoading = true
+        defer { isLoading = false }
+        error = nil
+        guard let tokens = await readClaudeCodeCredentials(), tokens.expiresAt > Date() else {
+            error = .claudeCodeStale
+            return
+        }
+        do {
+            let profile = try await ClaudeAPIClient.fetchOAuthProfile(accessToken: tokens.accessToken)
+            insertClaudeCodeAccount(tokens: tokens, identity: profile.account)
+            organizationDetails = profile.organization
+            usage = nil
+            lastUpdated = nil
+            try persistAccounts()
+            startPolling()
+        } catch {
+            self.error = .network(error.localizedDescription)
+        }
+    }
+
+    /// One login, one entry: an own-OAuth account for the same person is replaced.
+    func insertClaudeCodeAccount(tokens: OAuthCredentials, identity: AccountIdentity) {
+        accounts.removeAll { $0.id == identity.uuid || $0.id == Self.claudeCodeAccountID }
+        accounts.append(Account(id: Self.claudeCodeAccountID, label: identity.email,
+                                credentials: tokens, isClaudeCode: true))
+        activeID = Self.claudeCodeAccountID
+        credentials = tokens
+    }
+
+    /// The borrowed session is never refreshed — rotating its refresh token would
+    /// log the CLI out. A dead token keeps the last numbers and waits for the CLI
+    /// to renew it; polling continues so the next poll picks that up.
+    private func refreshClaudeCodeUsage() async {
+        isLoading = true
+        defer { isLoading = false; isSwitchingAccount = false }
+        guard let creds = await readClaudeCodeCredentials(), creds.expiresAt > Date() else {
+            error = .claudeCodeStale
+            return
+        }
+        if let i = accounts.firstIndex(where: { $0.id == activeID }), accounts[i].credentials != creds {
+            // New login or a CLI-side refresh: store the snapshot, re-fetch the
+            // profile in case `/login` switched to another account.
+            if accounts[i].credentials.refreshToken != creds.refreshToken { organizationDetails = nil }
+            accounts[i].credentials = creds
+            try? persistAccounts()
+        }
+        credentials = creds
+        do {
+            usage = try await ClaudeAPIClient.fetchOAuthUsage(accessToken: creds.accessToken)
+            error = nil
+            lastUpdated = Date()
+            if organizationDetails == nil,
+               let profile = try? await ClaudeAPIClient.fetchOAuthProfile(accessToken: creds.accessToken),
+               let i = accounts.firstIndex(where: { $0.id == activeID }) {
+                organizationDetails = profile.organization
+                accounts[i].label = profile.account.email
+                try? persistAccounts()
+            }
+            Task { @MainActor [weak self] in await self?.refreshPlatformCredits() }
+        } catch APIError.sessionExpired {
+            error = .claudeCodeStale
+        } catch APIError.rateLimited {
+            error = .rateLimited
+        } catch {
+            self.error = .network(error.localizedDescription)
+        }
+    }
+
     // MARK: - API Calls
 
     /// Opens the browser for consent, identifies the account via its profile,
@@ -300,6 +388,7 @@ public final class AppState {
     }
 
     public func refreshUsage() async {
+        if activeIsClaudeCode { return await refreshClaudeCodeUsage() }
         guard var creds = credentials else { return }
         isLoading = true
         error = nil
@@ -468,6 +557,7 @@ public enum AppError: Equatable {
     case rateLimited
     case network(String)
     case keychainLocked
+    case claudeCodeStale
 
     public var message: String {
         switch self {
@@ -477,6 +567,7 @@ public enum AppError: Equatable {
         case .oauth(let e): return e.displayMessage
         case .network(let msg): return msg
         case .keychainLocked: return String(localized: "error.keychainLocked", bundle: .module)
+        case .claudeCodeStale: return String(localized: "error.claudeCodeStale", bundle: .module)
         }
     }
 }

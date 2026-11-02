@@ -33,4 +33,69 @@ struct ClaudeCodeSessionTests {
         let acct = try JSONDecoder().decode(Account.self, from: Data(json.utf8))
         #expect(acct.isClaudeCode == nil)
     }
+
+    // MARK: - AppState
+
+    private static let cli = KeychainService(serviceName: "com.claudebar.test.claudeCodeSession.cli")
+
+    @MainActor
+    private func makeState() -> AppState {
+        let state = AppState(keychain: KeychainService(serviceName: "com.claudebar.test.claudeCodeSession"),
+                             claudeCodeKeychain: Self.cli)
+        state.wipeAllState()
+        try? Self.cli.delete(account: NSUserName())
+        return state
+    }
+
+    private func creds(_ tag: String, expiresIn: TimeInterval) -> OAuthCredentials {
+        OAuthCredentials(accessToken: "at-\(tag)", refreshToken: "rt-\(tag)",
+                         expiresAt: Date().addingTimeInterval(expiresIn))
+    }
+
+    @MainActor @Test func expiredCLITokenGoesStaleWithoutRefreshing() async throws {
+        let state = makeState()
+        state.insertClaudeCodeAccount(tokens: creds("old", expiresIn: 3600),
+                                      identity: AccountIdentity(uuid: "u1", email: "a@x.com"))
+        state.usage = try ClaudeAPIClient.parseUsageResponse(
+            data: Data(#"{"seven_day": {"utilization": 10.0, "resets_at": null}}"#.utf8))
+        // The CLI's item now holds an expired token.
+        try Self.cli.save(account: NSUserName(), value: """
+        {"claudeAiOauth":{"accessToken":"at-dead","refreshToken":"rt-dead","expiresAt":\
+        \(Int(Date().addingTimeInterval(-60).timeIntervalSince1970 * 1000))}}
+        """)
+
+        await state.refreshUsage()
+
+        #expect(state.error == .claudeCodeStale)
+        #expect(state.usage != nil)                          // last numbers kept
+        #expect(state.activeAccount?.expiredAt == nil)       // not marked dead
+        #expect(state.credentials?.refreshToken == "rt-old") // nothing refreshed or rewritten
+        state.wipeAllState()
+        try? Self.cli.delete(account: NSUserName())
+    }
+
+    @MainActor @Test func missingCLIItemGoesStale() async {
+        let state = makeState()
+        state.insertClaudeCodeAccount(tokens: creds("old", expiresIn: 3600),
+                                      identity: AccountIdentity(uuid: "u1", email: "a@x.com"))
+        await state.refreshUsage()
+        #expect(state.error == .claudeCodeStale)
+        #expect(state.isAuthenticated)                       // keeps polling, no sign-in panel
+        state.wipeAllState()
+    }
+
+    @MainActor @Test func claudeCodeEntryReplacesSameUUIDAccount() {
+        let state = makeState()
+        state.upsert(Account(id: "u1", label: "a@x.com", credentials: creds("own", expiresIn: 3600)))
+        state.upsert(Account(id: "u2", label: "b@x.com", credentials: creds("b", expiresIn: 3600)))
+
+        state.insertClaudeCodeAccount(tokens: creds("cli", expiresIn: 3600),
+                                      identity: AccountIdentity(uuid: "u1", email: "a@x.com"))
+
+        #expect(state.accounts.map(\.id) == ["u2", AppState.claudeCodeAccountID])
+        #expect(state.activeID == AppState.claudeCodeAccountID)
+        #expect(state.activeAccount?.isClaudeCode == true)
+        #expect(state.activeAccount?.label == "a@x.com")
+        state.wipeAllState()
+    }
 }

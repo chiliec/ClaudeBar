@@ -17,6 +17,7 @@
 "apiError.rateLimited" = "Rate limited";
 "apiError.sessionExpired" = "Session expired";
 "error.api %@" = "API error: %@";
+"error.claudeCodeStale" = "Waiting for Claude Code — run claude to refresh";
 "error.keychainLocked" = "Keychain access denied — re-enter your key";
 "error.rateLimited" = "Rate limited — will retry";
 "error.sessionExpired" = "Session expired — sign in again";

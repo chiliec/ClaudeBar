@@ -3,8 +3,8 @@ import Foundation
 /// Read-only access to Claude Code CLI's own OAuth login. Never refresh or
 /// write these tokens: refresh tokens rotate, so a ClaudeBar refresh would
 /// invalidate the CLI's copy and force a `/login`.
-enum ClaudeCodeSession {
-    static let serviceName = "Claude Code-credentials"
+public enum ClaudeCodeSession {
+    public static let serviceName = "Claude Code-credentials"
 
     static func parse(_ json: String) -> OAuthCredentials? {
         struct Blob: Decodable {
