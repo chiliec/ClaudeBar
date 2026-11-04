@@ -6,6 +6,20 @@
     <description>Updates for ClaudeBar</description>
     <language>en</language>
     <item>
+      <title>Version 0.0.43</title>
+      <pubDate>Wed, 04 Nov 2026 07:31:27 +0000</pubDate>
+      <sparkle:version>0.0.43</sparkle:version>
+      <sparkle:shortVersionString>0.0.43</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[### No more repeated Keychain prompts for Claude Code's account
+
+ClaudeBar no longer asks for your login keychain password every time Claude
+Code refreshes its session. Clicking "Always Allow" used to last only until
+Claude Code's next token refresh. ClaudeBar now reads the login through
+macOS's own `security` tool, which Claude Code's Keychain item always trusts.]]></description>
+      <enclosure url="https://github.com/chiliec/ClaudeBar/releases/download/v0.0.43/ClaudeBar.zip" sparkle:edSignature="4kYa3gcjLqVS8YjD1lHGma5lVIhqyOncupz3BfG+1bZ1/HsssgX+Kj4mkmrMIRBqdUbpI3+ukslGzX+fq1NlDQ==" length="3708799" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.0.42</title>
       <pubDate>Mon, 02 Nov 2026 10:36:42 +0000</pubDate>
       <sparkle:version>0.0.42</sparkle:version>
