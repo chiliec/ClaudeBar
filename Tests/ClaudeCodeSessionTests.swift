@@ -28,6 +28,22 @@ struct ClaudeCodeSessionTests {
         #expect(ClaudeCodeSession.load(from: kc)?.accessToken == "sk-ant-oat01-x")
     }
 
+    /// Writes the item with `security`, as the CLI does, so `security` is on its
+    /// ACL. An item made through SecItem would make the read below prompt.
+    private static func security(_ args: String...) throws {
+        let p = try Process.run(URL(fileURLWithPath: "/usr/bin/security"), arguments: args)
+        p.waitUntilExit()
+    }
+
+    @Test func securityToolReadsItemAndMissingIsNil() throws {
+        let service = "com.claudebar.test.claudeCodeSession.securityTool"
+        try Self.security("add-generic-password", "-U", "-s", service, "-a", NSUserName(), "-w", Self.cliJSON)
+        defer { try? Self.security("delete-generic-password", "-s", service, "-a", NSUserName()) }
+        let tool = SecurityToolKeychain(serviceName: service)
+        #expect(try tool.retrieve(account: NSUserName()) == Self.cliJSON)
+        #expect(try tool.retrieve(account: "no-such-account") == nil)
+    }
+
     @Test func oldAccountBlobsDecodeWithoutFlag() throws {
         let json = #"{"id":"u1","label":"a@x.com","credentials":{"accessToken":"a","refreshToken":"b","expiresAt":0}}"#
         let acct = try JSONDecoder().decode(Account.self, from: Data(json.utf8))

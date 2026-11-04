@@ -48,7 +48,7 @@ public final class AppState {
     /// `loadNow: false` builds an empty state and leaves the Keychain alone; the
     /// app uses it and then calls `start()`. See there for why.
     public init(keychain: any KeychainServicing = KeychainService(),
-                claudeCodeKeychain: any KeychainServicing = KeychainService(serviceName: ClaudeCodeSession.serviceName),
+                claudeCodeKeychain: any KeychainServicing = SecurityToolKeychain(),
                 loadNow: Bool = true) {
         self.keychain = keychain
         self.claudeCodeKeychain = claudeCodeKeychain
